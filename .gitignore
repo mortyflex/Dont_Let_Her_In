@@ -1,0 +1,56 @@
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+Logs/
+
+# Unity generated folders
+UnityProject/Library/
+UnityProject/Temp/
+UnityProject/Obj/
+UnityProject/Build/
+UnityProject/Builds/
+UnityProject/Logs/
+UnityProject/UserSettings/
+UnityProject/MemoryCaptures/
+UnityProject/Recordings/
+
+# Unity generated files
+UnityProject/*.csproj
+UnityProject/*.sln
+UnityProject/*.user
+UnityProject/*.pidb
+UnityProject/*.booproj
+UnityProject/*.svd
+UnityProject/*.pdb
+UnityProject/*.mdb
+UnityProject/*.opendb
+UnityProject/*.VC.db
+
+# Unity crash reports
+UnityProject/sysinfo.txt
+
+# Build outputs
+*.apk
+*.aab
+*.ipa
+*.app
+*.exe
+*.dmg
+*.zip
+
+# Large local assets / exports
+Exports/
+Builds/
+Recordings/
+Captures/
+
+# Environment files
+.env
+.env.local

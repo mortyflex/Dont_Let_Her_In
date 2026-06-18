@@ -1,0 +1,1228 @@
+# Technical Architecture — Don’t Let Her In
+
+## 1. Technical Summary
+
+**Project name:** Don’t Let Her In  
+**Engine:** Unity 6  
+**Rendering:** URP  
+**Language:** C#  
+**Initial platform:** iOS mobile portrait  
+**Future platforms:** Android, then possible VR/XR  
+**Current milestone:** Prototype v0.1 — First Fear Loop
+
+The prototype is a mobile-first horror game with a fixed first-person camera inside an elevator. The player answers short survival challenges while a creature approaches from a corridor.
+
+The technical goal is to create a small, modular, testable Unity project that proves the core gameplay loop before investing in final art, audio, monetization or platform expansion.
+
+Core loop:
+
+```txt
+Question starts
+Timer starts
+Creature advances
+Player answers
+Answer is evaluated
+Threat distance changes
+Next floor or death
+```
+
+---
+
+## 2. Architecture Principles
+
+The project must follow these principles:
+
+```txt
+Simple before complex
+Prototype before polish
+Placeholders before final assets
+Data-driven before hardcoded content
+Testable logic before scene-only logic
+Mobile-first before cinematic excess
+Small tasks before large refactors
+```
+
+The architecture should allow later replacement of:
+
+- placeholder art
+- placeholder audio
+- temporary UI
+- simple creature movement
+- basic questions
+- simple floor data
+
+without rewriting the entire gameplay loop.
+
+---
+
+## 3. Unity Project Location
+
+The Unity project must live inside:
+
+```txt
+UnityProject/
+```
+
+Repository root contains:
+
+```txt
+AGENTS.md
+README.md
+Docs/
+Skills/
+UnityProject/
+```
+
+Unity-specific files must remain inside `UnityProject/`.
+
+---
+
+## 4. Recommended Unity Folder Structure
+
+Inside `UnityProject/Assets/`:
+
+```txt
+Assets/
+  Art/
+    Characters/
+    Elevator/
+    Corridor/
+    Props/
+    Materials/
+    VFX/
+  Audio/
+    Ambience/
+    SFX/
+    Voices/
+    Music/
+  Prefabs/
+    Elevator/
+    Corridor/
+    Creature/
+    UI/
+    Systems/
+  Scenes/
+    Game.unity
+  Scripts/
+    Core/
+    GameLoop/
+    Questions/
+    Threat/
+    Creature/
+    Elevator/
+    UI/
+    Audio/
+    Save/
+    Tools/
+  ScriptableObjects/
+    Questions/
+    Floors/
+    Creatures/
+    Difficulty/
+    Audio/
+    HorrorEvents/
+  Tests/
+    EditMode/
+    PlayMode/
+```
+
+Do not create random top-level folders without a reason.
+
+---
+
+## 5. Scene Strategy
+
+For prototype v0.1, use one main scene:
+
+```txt
+UnityProject/Assets/Scenes/Game.unity
+```
+
+Later scenes may be added:
+
+```txt
+Boot.unity
+MainMenu.unity
+Results.unity
+```
+
+But v0.1 can use only `Game.unity` if it contains:
+
+- start flow
+- gameplay flow
+- result flow
+- restart flow
+
+---
+
+## 6. Recommended Scene Hierarchy
+
+`Game.unity` should use this hierarchy:
+
+```txt
+SceneRoot
+  GameSystems
+  Elevator
+  Corridor
+  Creature
+  Lighting
+  UI
+  Audio
+```
+
+Recommended `GameSystems` children:
+
+```txt
+GameSystems
+  GameManager
+  RunController
+  QuestionManager
+  ThreatManager
+  FloorDirector
+  AudioDirector
+```
+
+Recommended `Elevator` children:
+
+```txt
+Elevator
+  ElevatorInterior
+  DoorLeft
+  DoorRight
+  ButtonPanel
+  DigitalDisplay
+  CameraAnchor
+```
+
+Recommended `Corridor` children:
+
+```txt
+Corridor
+  Floor
+  Walls
+  Ceiling
+  Doors
+  Props
+  ClueAnchors
+  CreatureAnchors
+```
+
+Recommended `CreatureAnchors` children:
+
+```txt
+CreatureAnchors
+  Far
+  Visible
+  MidCorridor
+  NearDoor
+  AtDoor
+  Attack
+```
+
+Recommended `UI` children:
+
+```txt
+UI
+  Canvas
+    SafeArea
+      QuestionPanel
+      AnswerButtons
+      TimerView
+      FeedbackOverlay
+      ResultPanel
+```
+
+Recommended `Audio` children:
+
+```txt
+Audio
+  AmbienceSource
+  ElevatorSource
+  CreatureSource
+  UISource
+```
+
+---
+
+## 7. Core Systems
+
+## 7.1 `GameManager`
+
+Purpose:
+
+```txt
+Own global game state.
+Coordinate high-level transitions.
+```
+
+Responsibilities:
+
+- current game state
+- start run
+- end run
+- route to result state
+- expose game state events
+
+Should not:
+
+- calculate answer effects
+- store question content
+- move the creature directly
+- handle all UI logic
+
+Suggested location:
+
+```txt
+UnityProject/Assets/Scripts/Core/GameManager.cs
+```
+
+---
+
+## 7.2 `RunController`
+
+Purpose:
+
+```txt
+Own the current run.
+Track floors, run stats, win/loss.
+```
+
+Responsibilities:
+
+- current floor index
+- total floors
+- floors completed
+- correct answers count
+- wrong answers count
+- timeout count
+- average response time
+- win condition
+- loss condition
+- restart/reset
+
+Suggested location:
+
+```txt
+UnityProject/Assets/Scripts/GameLoop/RunController.cs
+```
+
+---
+
+## 7.3 `QuestionManager`
+
+Purpose:
+
+```txt
+Own question flow.
+Start questions, handle timer, evaluate answers.
+```
+
+Responsibilities:
+
+- load current question
+- start timer
+- expose remaining time
+- receive selected answer
+- detect timeout
+- classify answer speed
+- emit `AnswerResult`
+
+Should not:
+
+- decide creature visuals
+- hardcode all questions
+- own full run state
+
+Suggested location:
+
+```txt
+UnityProject/Assets/Scripts/Questions/QuestionManager.cs
+```
+
+---
+
+## 7.4 `ThreatManager`
+
+Purpose:
+
+```txt
+Own creature distance and stress logic.
+```
+
+Responsibilities:
+
+- current distance
+- current stress
+- apply correct fast result
+- apply correct normal result
+- apply correct slow result
+- apply wrong answer result
+- apply timeout result
+- clamp distance
+- clamp stress
+- detect death
+
+This is one of the most important test targets.
+
+Suggested location:
+
+```txt
+UnityProject/Assets/Scripts/Threat/ThreatManager.cs
+```
+
+---
+
+## 7.5 `CreatureController`
+
+Purpose:
+
+```txt
+Represent threat state visually.
+```
+
+Responsibilities:
+
+- read distance from `ThreatManager` or received state
+- move creature to distance-based position
+- update creature phase
+- trigger wrong-answer movement
+- trigger timeout movement
+- trigger attack feedback
+
+Should not:
+
+- calculate answer correctness
+- decide run outcome
+- own question timer
+
+Suggested location:
+
+```txt
+UnityProject/Assets/Scripts/Creature/CreatureController.cs
+```
+
+---
+
+## 7.6 `ElevatorController`
+
+Purpose:
+
+```txt
+Control elevator presentation.
+```
+
+Responsibilities:
+
+- door state
+- floor display
+- door twitch/jam feedback
+- elevator light feedback
+- optional button panel feedback
+
+Suggested location:
+
+```txt
+UnityProject/Assets/Scripts/Elevator/ElevatorController.cs
+```
+
+---
+
+## 7.7 `FloorDirector`
+
+Purpose:
+
+```txt
+Coordinate floor-level setup.
+```
+
+Responsibilities:
+
+- select current floor data
+- set initial creature distance
+- select question
+- apply lighting mood
+- trigger optional floor horror event
+- request transition to next floor
+
+Suggested location:
+
+```txt
+UnityProject/Assets/Scripts/GameLoop/FloorDirector.cs
+```
+
+---
+
+## 7.8 `AudioDirector`
+
+Purpose:
+
+```txt
+Coordinate audio feedback.
+```
+
+Responsibilities:
+
+- ambience loop
+- wrong answer sound
+- timeout sound
+- correct answer sound
+- creature proximity sound
+- attack sound
+
+Suggested location:
+
+```txt
+UnityProject/Assets/Scripts/Audio/AudioDirector.cs
+```
+
+---
+
+## 8. Game State Machine
+
+Use a clear state machine.
+
+Prototype states:
+
+```txt
+Boot
+MainMenu
+RunStart
+ElevatorIdle
+QuestionActive
+ResolvingAnswer
+FloorTransition
+CreatureAttack
+RunWon
+RunLost
+Results
+```
+
+Suggested enum:
+
+```csharp
+public enum GameState
+{
+    Boot,
+    MainMenu,
+    RunStart,
+    ElevatorIdle,
+    QuestionActive,
+    ResolvingAnswer,
+    FloorTransition,
+    CreatureAttack,
+    RunWon,
+    RunLost,
+    Results
+}
+```
+
+State transition rules:
+
+```txt
+Boot -> MainMenu
+MainMenu -> RunStart
+RunStart -> ElevatorIdle
+ElevatorIdle -> QuestionActive
+QuestionActive -> ResolvingAnswer
+ResolvingAnswer -> FloorTransition
+ResolvingAnswer -> CreatureAttack
+FloorTransition -> ElevatorIdle
+CreatureAttack -> RunLost
+RunLost -> Results
+RunWon -> Results
+Results -> RunStart
+```
+
+For the first prototype, `MainMenu` can be a simple start panel inside `Game.unity`.
+
+---
+
+## 9. Data-Driven Design
+
+Do not hardcode gameplay content directly into managers.
+
+Use ScriptableObjects where possible.
+
+Required or recommended data assets:
+
+```txt
+QuestionData
+FloorData
+CreatureData
+DifficultyData
+AudioCueData
+HorrorEventData
+```
+
+---
+
+## 10. `QuestionData`
+
+Suggested location:
+
+```txt
+UnityProject/Assets/Scripts/Questions/QuestionData.cs
+```
+
+Suggested asset folder:
+
+```txt
+UnityProject/Assets/ScriptableObjects/Questions/
+```
+
+Suggested fields:
+
+```txt
+id
+type
+prompt
+answers
+correctAnswerIndex
+timeLimitSeconds
+difficulty
+fastCorrectReward
+normalCorrectReward
+slowCorrectReward
+wrongAnswerPenalty
+timeoutPenalty
+optionalVisualClueId
+optionalAudioClueId
+tags
+```
+
+Suggested enum:
+
+```csharp
+public enum QuestionType
+{
+    Observation,
+    ShortMemory,
+    AudioClue,
+    EnvironmentalInstruction,
+    SimpleLogic,
+    SangFroid,
+    Anomaly
+}
+```
+
+---
+
+## 11. `FloorData`
+
+Suggested location:
+
+```txt
+UnityProject/Assets/Scripts/GameLoop/FloorData.cs
+```
+
+Suggested asset folder:
+
+```txt
+UnityProject/Assets/ScriptableObjects/Floors/
+```
+
+Suggested fields:
+
+```txt
+floorIndex
+floorLabel
+questions
+initialCreatureDistance
+creatureAdvanceSpeed
+lightingMood
+horrorEvent
+```
+
+---
+
+## 12. `CreatureData`
+
+Suggested location:
+
+```txt
+UnityProject/Assets/Scripts/Creature/CreatureData.cs
+```
+
+Suggested asset folder:
+
+```txt
+UnityProject/Assets/ScriptableObjects/Creatures/
+```
+
+Suggested fields:
+
+```txt
+id
+displayName
+farThreshold
+visibleThreshold
+midCorridorThreshold
+nearDoorThreshold
+atDoorThreshold
+attackThreshold
+baseAdvanceSpeed
+wrongAnswerMoveStyle
+timeoutMoveStyle
+```
+
+---
+
+## 13. Runtime Models
+
+## 13.1 `AnswerSpeed`
+
+Suggested enum:
+
+```csharp
+public enum AnswerSpeed
+{
+    Fast,
+    Normal,
+    Slow,
+    Timeout
+}
+```
+
+## 13.2 `AnswerResult`
+
+Suggested fields:
+
+```txt
+questionId
+isCorrect
+answerSpeed
+selectedAnswerIndex
+correctAnswerIndex
+responseTimeSeconds
+distanceDelta
+stressDelta
+isTimeout
+```
+
+Suggested file:
+
+```txt
+UnityProject/Assets/Scripts/Questions/AnswerResult.cs
+```
+
+## 13.3 `ThreatState`
+
+Suggested fields:
+
+```txt
+distance
+stressLevel
+isDead
+lastDistanceDelta
+lastStressDelta
+```
+
+Suggested file:
+
+```txt
+UnityProject/Assets/Scripts/Threat/ThreatState.cs
+```
+
+## 13.4 `RunResult`
+
+Suggested fields:
+
+```txt
+won
+lost
+floorsCompleted
+correctAnswers
+wrongAnswers
+timeouts
+averageResponseTime
+finalDistance
+score
+```
+
+Suggested file:
+
+```txt
+UnityProject/Assets/Scripts/GameLoop/RunResult.cs
+```
+
+---
+
+## 14. Event Strategy
+
+Use simple C# events or UnityEvents for prototype.
+
+Avoid overengineering a full event bus at v0.1 unless needed.
+
+Possible events:
+
+```txt
+OnRunStarted
+OnRunEnded
+OnQuestionStarted
+OnQuestionAnswered
+OnQuestionTimedOut
+OnThreatChanged
+OnCreaturePhaseChanged
+OnPlayerDied
+OnFloorCompleted
+OnResultShown
+```
+
+For pure logic, prefer C# events.
+
+For Inspector-driven scene reactions, UnityEvents are acceptable.
+
+---
+
+## 15. UI Architecture
+
+Recommended UI scripts:
+
+```txt
+QuestionView
+AnswerButtonView
+TimerView
+FeedbackOverlayView
+ResultView
+GameplayUIView
+```
+
+Suggested folder:
+
+```txt
+UnityProject/Assets/Scripts/UI/
+```
+
+Responsibilities:
+
+## 15.1 `QuestionView`
+
+- display question prompt
+- display answer choices
+- expose answer selected event
+
+## 15.2 `TimerView`
+
+- display remaining time
+- optionally animate urgency
+
+## 15.3 `FeedbackOverlayView`
+
+- show wrong-answer feedback
+- show timeout feedback
+- show correct feedback
+- show blackout/glitch overlay if implemented
+
+## 15.4 `ResultView`
+
+- show survived/caught
+- show run stats
+- expose restart button
+
+UI must not own core gameplay rules.
+
+---
+
+## 16. Creature Visual Architecture
+
+`CreatureController` should map distance to phase.
+
+Suggested phases:
+
+```csharp
+public enum CreaturePhase
+{
+    Far,
+    Visible,
+    MidCorridor,
+    NearDoor,
+    AtDoor,
+    Attack
+}
+```
+
+Suggested mapping:
+
+```txt
+distance > 80: Far
+distance > 60: Visible
+distance > 40: MidCorridor
+distance > 25: NearDoor
+distance > 0: AtDoor
+distance <= 0: Attack
+```
+
+The controller may:
+
+- snap to anchors
+- interpolate to anchors
+- hide the creature when far
+- trigger attack on distance 0
+
+Prototype can snap between anchors.
+
+Polish can interpolate later.
+
+---
+
+## 17. Timer Architecture
+
+Question timer belongs to `QuestionManager` or a small helper class.
+
+Suggested behavior:
+
+```txt
+Start timer with question time limit
+Track elapsed time
+Expose remaining time
+Classify answer speed
+Trigger timeout event
+Stop timer after answer
+Stop timer on death
+```
+
+Avoid timer logic spread across UI scripts.
+
+---
+
+## 18. Save System
+
+Save system is optional for v0.1.
+
+If implemented, keep it minimal.
+
+Possible saved data:
+
+```txt
+bestScore
+bestFloor
+settingsVolume
+hasCompletedPrototype
+```
+
+Suggested file:
+
+```txt
+UnityProject/Assets/Scripts/Save/SaveManager.cs
+```
+
+Do not add cloud save in v0.1.
+
+---
+
+## 19. Audio Architecture
+
+Use `AudioDirector` for high-level audio events.
+
+Suggested audio events:
+
+```txt
+PlayCorrectFast
+PlayCorrectNormal
+PlayWrongAnswer
+PlayTimeout
+PlayCreatureNear
+PlayAttack
+SetThreatIntensity
+```
+
+Audio intensity can be based on distance:
+
+```txt
+far: low ambience
+mid: footsteps/scrape audible
+near: breathing/metal pressure
+door: intense close threat
+```
+
+Do not add complex audio middleware in v0.1.
+
+---
+
+## 20. Mobile Architecture
+
+Prototype target:
+
+```txt
+Android first
+Portrait orientation
+Touch input
+Fixed camera
+No joystick
+No keyboard
+No controller requirement
+```
+
+Mobile rules:
+
+- large tap targets
+- readable text
+- no tiny UI
+- no precision input
+- no free movement
+- simple scene
+- fast restart
+
+---
+
+## 21. Performance Constraints
+
+Target:
+
+```txt
+30 FPS minimum for prototype
+No blocking console errors
+Small scene
+Limited lights
+No heavy post-processing
+No large asset packs without approval
+```
+
+Avoid:
+
+- many real-time lights
+- heavy shadows
+- large textures
+- complex shaders
+- dense particles
+- unnecessary physics
+- heavy per-frame allocations
+- repeated `FindObjectOfType` calls
+
+---
+
+## 22. Testing Architecture
+
+Use Unity Test Framework.
+
+Test folders:
+
+```txt
+UnityProject/Assets/Tests/EditMode/
+UnityProject/Assets/Tests/PlayMode/
+```
+
+Prioritize EditMode tests for pure logic.
+
+Minimum test files:
+
+```txt
+ThreatManagerTests.cs
+QuestionEvaluatorTests.cs
+RunControllerTests.cs
+```
+
+Possible PlayMode test file:
+
+```txt
+GameSceneFlowTests.cs
+```
+
+---
+
+## 23. Required Tests for Core Loop
+
+The prototype should include tests for:
+
+```txt
+Threat distance clamps between 0 and 100
+Correct fast increases distance
+Correct normal increases distance
+Correct slow increases distance slightly
+Wrong answer decreases distance
+Timeout decreases distance more than wrong answer
+Stress increases after wrong answer
+Stress increases more after timeout
+Correct fast can reduce stress
+Death triggers when distance reaches 0
+Answer speed classification works
+Run can win after final floor
+Run can reset after loss
+```
+
+If Unity Editor is unavailable, the agent must say tests were not run.
+
+Never claim tests passed unless they were executed.
+
+---
+
+## 24. Git Architecture Rules
+
+Never commit generated Unity folders.
+
+Do not commit:
+
+```txt
+UnityProject/Library/
+UnityProject/Temp/
+UnityProject/Obj/
+UnityProject/Build/
+UnityProject/Builds/
+UnityProject/Logs/
+UnityProject/UserSettings/
+UnityProject/MemoryCaptures/
+UnityProject/Recordings/
+```
+
+Do not use:
+
+```bash
+git add .
+```
+
+Use targeted adds only.
+
+Example:
+
+```bash
+git add UnityProject/Assets/Scripts/Threat/ThreatManager.cs UnityProject/Assets/Tests/EditMode/ThreatManagerTests.cs
+git commit -m "🎮 feat(gameplay): add threat distance system"
+```
+
+---
+
+## 25. Dependency Rules
+
+Do not add third-party dependencies in v0.1 unless explicitly approved.
+
+Allowed by default:
+
+```txt
+Unity built-in systems
+URP
+TextMeshPro
+Unity Test Framework
+Unity Input System if needed
+```
+
+Not allowed in v0.1 unless explicitly requested:
+
+```txt
+ads SDK
+analytics SDK
+IAP SDK
+networking SDK
+VR/XR SDK
+large visual scripting framework
+large third-party controller
+advanced audio middleware
+```
+
+---
+
+## 26. Build Rules
+
+Initial build target:
+
+```txt
+Android
+Portrait
+Development build acceptable for testing
+```
+
+Builds should not be committed.
+
+Build output folders should remain ignored.
+
+Potential local output:
+
+```txt
+Builds/Android/
+```
+
+This folder is ignored.
+
+---
+
+## 27. Agent Implementation Rules
+
+For each implementation task, the agent must:
+
+1. Read relevant docs.
+2. Restate scope.
+3. Implement only requested changes.
+4. Keep changes small.
+5. Add tests when logic changes.
+6. Run tests if possible.
+7. Check Git status.
+8. Report files changed.
+9. Suggest targeted commit command.
+
+The agent must not:
+
+- refactor unrelated systems
+- add final art
+- import heavy assets
+- add monetization
+- add VR
+- add procedural generation
+- add online systems
+- change product scope silently
+
+---
+
+## 28. Prototype v0.1 Technical Definition of Done
+
+Prototype v0.1 is technically complete when:
+
+- `Game.unity` opens without blocking errors
+- player can start a run
+- question appears
+- timer starts
+- answer buttons work
+- answer speed is classified
+- `ThreatManager` updates distance and stress
+- creature visual reacts to distance
+- wrong answer feedback plays
+- timeout feedback plays
+- death state works
+- victory state works
+- result screen appears
+- restart works
+- mobile portrait UI is readable
+- core logic has EditMode tests
+- generated Unity folders are ignored
+- docs reflect current behavior
+
+---
+
+## 29. Future Technical Extensions
+
+Do not implement these in v0.1, but keep architecture compatible:
+
+```txt
+better creature animation
+better art assets
+more floors
+more question banks
+daily challenge
+infinite mode
+save progression
+settings menu
+haptics
+analytics
+iOS build
+VR/XR adaptation
+localization
+```
+
+---
+
+## 30. Current Technical Decisions
+
+Current decisions:
+
+```txt
+Engine: Unity 6
+Rendering: URP
+Language: C#
+Platform: iOS first
+Orientation: portrait
+Camera: fixed inside elevator
+Movement: no free movement
+Creature AI: none in v0.1
+Creature logic: distance-driven
+Data: ScriptableObjects where possible
+Testing: Unity Test Framework
+Build outputs: ignored
+```
