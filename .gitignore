@@ -24,6 +24,7 @@ UnityProject/Recordings/
 # Unity generated files
 UnityProject/*.csproj
 UnityProject/*.sln
+UnityProject/*.slnx
 UnityProject/*.user
 UnityProject/*.pidb
 UnityProject/*.booproj
