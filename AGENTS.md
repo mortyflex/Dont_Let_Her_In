@@ -24,6 +24,16 @@ Main promise:
 
 > Every second of hesitation brings her closer.
 
+## Language Rule
+
+The user communicates in French.
+
+All agent delivery reports must be written in French.
+
+Code, class names, method names, test names, file names, technical identifiers and commit messages must stay in English.
+
+Do not translate code or commit messages into French.
+
 ## Current prototype scope
 
 Build a small playable vertical slice.
