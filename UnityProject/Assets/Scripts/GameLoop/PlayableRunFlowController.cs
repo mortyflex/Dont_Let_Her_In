@@ -25,8 +25,11 @@ namespace DontLetHerIn.GameLoop
         [Tooltip("Optional. Falls back to the first CreatureController found in the scene.")]
         [SerializeField] private CreatureController creature;
 
-        [Tooltip("Seconds the result feedback is shown before the next question starts.")]
+        [Tooltip("Seconds the result feedback is shown after a correct answer before the next question starts.")]
         [SerializeField] private float statusHoldSeconds = 1.2f;
+
+        [Tooltip("Extra seconds added after a wrong answer or timeout so the danger has time to register.")]
+        [SerializeField] private float dangerHoldExtraSeconds = 0.3f;
 
         private RunController _run;
         private QuestionManager _questions;
@@ -185,7 +188,8 @@ namespace DontLetHerIn.GameLoop
                 return;
             }
 
-            _advanceRoutine = StartCoroutine(NextQuestionAfterDelay());
+            float hold = InterQuestionPacing.GetHoldSeconds(outcome, statusHoldSeconds, dangerHoldExtraSeconds);
+            _advanceRoutine = StartCoroutine(NextQuestionAfterDelay(hold));
         }
 
         private void ApplyOutcome(AnswerOutcome outcome)
@@ -200,9 +204,9 @@ namespace DontLetHerIn.GameLoop
             }
         }
 
-        private IEnumerator NextQuestionAfterDelay()
+        private IEnumerator NextQuestionAfterDelay(float holdSeconds)
         {
-            yield return new WaitForSeconds(statusHoldSeconds);
+            yield return new WaitForSeconds(holdSeconds);
             _advanceRoutine = null;
             if (_run.IsRunning)
             {
