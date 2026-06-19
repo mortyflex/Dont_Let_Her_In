@@ -324,8 +324,10 @@ Visual clues should avoid language dependence when possible (a door number, an a
 Text-based clues (wall messages, instructions) MUST be localized EN/FR.
 The existing PrototypeLocalization / LocalizedText / GameLanguage approach should be reused
   (lightweight, code-based, English default, French available; no Unity Localization package).
-The current 25 prototype questions remain English-only and will be localized in a future
-  phase (recommended Phase 7E) before/with evidence-trial authoring.
+Phase 7F localized the live 25 prototype questions/answers/cues (PrototypeFloorSet) EN/FR via
+  optional French fields on QuestionData/QuestionCue. The evidence prototype set
+  (PrototypeEvidenceFloorSet) is also EN/FR. Future evidence content should follow the same
+  EN/FR pattern.
 ```
 
 Caution for **anomaly** and **wall message** clues: keep them short so the FR translation
@@ -342,10 +344,10 @@ Phase 7E — Evidence Trial Data Model — DONE (DATA_MODEL_ONLY)
            PrototypeEvidenceFloorSet, all pure data and EditMode-tested. The runtime trial
            flow still uses PrototypeFloorSet; nothing visual was added.
 
-Phase 7F — Question Content Localization EN/FR (planned)
-           Localize the current live 25 prototype questions/answers/cues used by
-           PrototypeFloorSet, reusing PrototypeLocalization. (The evidence prototype set is
-           already EN/FR; this covers the questions still driving the runtime.)
+Phase 7F — Question Content Localization EN/FR — DONE
+           Localized the live 25 prototype questions/answers/cues used by PrototypeFloorSet
+           via optional French fields on QuestionData/QuestionCue, resolved by
+           PrototypeLocalization.Language. Runtime localizes EN/FR with no gameplay change.
 
 Phase 7G — Static Corridor Clue Prototype (planned)
            Show one floor's FloorObservationSet clues statically in the corridor (no camera

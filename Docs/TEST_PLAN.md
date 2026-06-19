@@ -871,9 +871,12 @@ These tests must not change the current threat, descent or localization rules.
 Current status:
 
 ```txt
-179/179 EditMode tests passing after Phase 7E (was 148 after Phase 7B.4).
+189/189 EditMode tests passing after Phase 7F (179 after Phase 7E, 148 after Phase 7B.4).
 Descent loop, non-receding threat, trial flow, per-floor reset and EN/FR localization are covered by EditMode tests.
 Phase 7E added evidence data-model tests (data containers, validator rules, prototype evidence set).
+Phase 7F added PlayableContentLocalizationTests: the live PrototypeFloorSet prompts/answers/cues
+  localize EN/FR, all 25 trials have EN+FR, French keeps 4 answers and the same correct index,
+  and switching language does not change floor/trial counts or threat/floor progression data.
 Intro readability, floor transitions and French UI smoke check are manual Play Mode checks.
 No iOS build checks yet.
 ```
@@ -881,6 +884,5 @@ No iOS build checks yet.
 Next expected test activity:
 
 ```txt
-Phase 7F: add tests for live question-content localization once the runtime questions are translated.
 Phase 7G+: PlayMode tests for static clues, observation handoff and camera pass when implemented.
 ```

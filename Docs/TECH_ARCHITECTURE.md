@@ -78,7 +78,12 @@ Lightweight code-based localization (PrototypeLocalization + LocalizedText + Gam
 English is the default; French available for UI / status / intro / transition / result.
 Language is switchable from code/tests; there is no settings UI yet.
 No Unity Localization package and no localization asset pipeline.
-Question / answer / cue content remains English-only for now.
+Phase 7F: the live playable trial content (PrototypeFloorSet) is now localized EN/FR too —
+  QuestionData and QuestionCue carry optional French fields (promptFrench, answersFrench,
+  labelFrench, linesFrench). Their player-facing getters (Prompt/Answers/Label/Lines) resolve
+  to PrototypeLocalization.Language (English fallback). Gameplay stays index-based, so the
+  correct answer, answer count and floor/trial structure are unchanged across languages.
+  GameplayUIController needed no change (it already reads those getters).
 ```
 
 Removed / obsolete (do not document as current):

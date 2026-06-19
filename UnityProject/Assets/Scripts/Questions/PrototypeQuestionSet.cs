@@ -30,7 +30,9 @@ namespace DontLetHerIn.Questions
                     correctAnswerIndex: 1,
                     timeLimitSeconds: 8f,
                     difficulty: 1,
-                    tags: new[] { "observation" }),
+                    tags: new[] { "observation" },
+                    promptFrench: "Quel numéro de chambre a clignoté ?",
+                    answersFrench: new[] { "101", "104", "108", "102" }),
 
                 QuestionData.Create(
                     id: "floor-2-short-memory",
@@ -40,7 +42,9 @@ namespace DontLetHerIn.Questions
                     correctAnswerIndex: 1,
                     timeLimitSeconds: 7f,
                     difficulty: 1,
-                    tags: new[] { "memory" }),
+                    tags: new[] { "memory" },
+                    promptFrench: "Quel symbole était au centre ?",
+                    answersFrench: new[] { "Œil", "Clé", "Main", "Porte" }),
 
                 QuestionData.Create(
                     id: "floor-3-environmental",
@@ -50,7 +54,9 @@ namespace DontLetHerIn.Questions
                     correctAnswerIndex: 1,
                     timeLimitSeconds: 6f,
                     difficulty: 2,
-                    tags: new[] { "instruction" }),
+                    tags: new[] { "instruction" },
+                    promptFrench: "Qu'a dit le mur ?",
+                    answersFrench: new[] { "Ne cours pas", "Ne regarde pas à gauche", "Ne réponds pas", "Ne mens pas" }),
 
                 QuestionData.Create(
                     id: "floor-4-audio-clue",
@@ -61,7 +67,9 @@ namespace DontLetHerIn.Questions
                     timeLimitSeconds: 5f,
                     difficulty: 2,
                     tags: new[] { "audio", "placeholder" },
-                    optionalAudioClueId: "voice-272"),
+                    optionalAudioClueId: "voice-272",
+                    promptFrench: "Quelle séquence la voix a-t-elle répétée ?",
+                    answersFrench: new[] { "272", "227", "722", "277" }),
 
                 QuestionData.Create(
                     id: "floor-5-sang-froid",
@@ -71,7 +79,9 @@ namespace DontLetHerIn.Questions
                     correctAnswerIndex: 1,
                     timeLimitSeconds: 4f,
                     difficulty: 3,
-                    tags: new[] { "sang-froid" }),
+                    tags: new[] { "sang-froid" },
+                    promptFrench: "L'ascenseur indique SORTIE MAINTENANT, le mur indique ATTENDS. Que fais-tu ?",
+                    answersFrench: new[] { "Sortir", "Attendre", "Ouvrir les portes", "Détourner le regard" }),
             };
         }
     }

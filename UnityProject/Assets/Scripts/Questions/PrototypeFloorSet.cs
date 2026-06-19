@@ -11,6 +11,10 @@ namespace DontLetHerIn.Questions
     /// an authored trial 2). Trials 3-5 are simple, short, prototype-quality but playable
     /// additions (clearly labelled below). This is content, not gameplay logic, and carries
     /// only pure data so it stays fully testable in EditMode without ScriptableObject assets.
+    ///
+    /// Phase 7F adds French content (prompt, answers, cue label/lines) for every trial so the
+    /// playable run localizes EN/FR via <see cref="DontLetHerIn.GameLoop.PrototypeLocalization"/>.
+    /// The correct answer index and the floor/trial structure are unchanged.
     /// </summary>
     public static class PrototypeFloorSet
     {
@@ -33,17 +37,25 @@ namespace DontLetHerIn.Questions
                     FirstTrial(firstTrials[0], firstCues),
                     Trial("floor-1-trial-2", QuestionType.Observation, 8f,
                         "Which arrow was lit?", new[] { "Up", "Down", "Left", "Right" }, 0,
-                        "ELEVATOR PANEL", new[] { "UP ARROW" }, 0),
+                        "ELEVATOR PANEL", new[] { "UP ARROW" }, 0,
+                        "Quelle flèche était allumée ?", new[] { "Haut", "Bas", "Gauche", "Droite" },
+                        "PANNEAU ASCENSEUR", new[] { "FLÈCHE HAUT" }),
                     // Prototype trials 3-5 (simple placeholder-but-playable).
                     Trial("floor-1-trial-3", QuestionType.Observation, 8f,
                         "Which number was shown?", new[] { "7", "3", "9", "5" }, 0,
-                        "NUMBER PAD", new[] { "7" }, 0),
+                        "NUMBER PAD", new[] { "7" }, 0,
+                        "Quel numéro était affiché ?", new[] { "7", "3", "9", "5" },
+                        "CLAVIER", new[] { "7" }),
                     Trial("floor-1-trial-4", QuestionType.Observation, 8f,
                         "Which light stayed on?", new[] { "Red", "Green", "Blue", "White" }, 1,
-                        "PANEL LIGHT", new[] { "GREEN" }, 0),
+                        "PANEL LIGHT", new[] { "GREEN" }, 0,
+                        "Quel voyant est resté allumé ?", new[] { "Rouge", "Vert", "Bleu", "Blanc" },
+                        "VOYANT", new[] { "VERT" }),
                     Trial("floor-1-trial-5", QuestionType.Anomaly, 8f,
                         "Which floor number glitched?", new[] { "2", "4", "6", "8" }, 1,
-                        "FLOOR DISPLAY", new[] { "4" }, 0),
+                        "FLOOR DISPLAY", new[] { "4" }, 0,
+                        "Quel numéro d'étage a bugué ?", new[] { "2", "4", "6", "8" },
+                        "AFFICHEUR D'ÉTAGE", new[] { "4" }),
                 }),
 
                 new FloorDefinition(2, "Memory", new List<FloorTrial>
@@ -51,16 +63,24 @@ namespace DontLetHerIn.Questions
                     FirstTrial(firstTrials[1], firstCues),
                     Trial("floor-2-trial-2", QuestionType.ShortMemory, 7f,
                         "Which word appeared twice?", new[] { "Wait", "Open", "Run", "Hide" }, 0,
-                        "WALL WORDS", new[] { "WAIT", "OPEN", "WAIT" }, -1),
+                        "WALL WORDS", new[] { "WAIT", "OPEN", "WAIT" }, -1,
+                        "Quel mot est apparu deux fois ?", new[] { "Attends", "Ouvre", "Cours", "Cache-toi" },
+                        "MOTS SUR LE MUR", new[] { "ATTENDS", "OUVRE", "ATTENDS" }),
                     Trial("floor-2-trial-3", QuestionType.ShortMemory, 7f,
                         "Which symbol moved?", new[] { "Circle", "Square", "Triangle", "Cross" }, 2,
-                        "SYMBOLS", new[] { "TRIANGLE" }, 0),
+                        "SYMBOLS", new[] { "TRIANGLE" }, 0,
+                        "Quel symbole a bougé ?", new[] { "Cercle", "Carré", "Triangle", "Croix" },
+                        "SYMBOLES", new[] { "TRIANGLE" }),
                     Trial("floor-2-trial-4", QuestionType.ShortMemory, 7f,
                         "Which name was whispered?", new[] { "Anna", "Mara", "Lena", "Sara" }, 1,
-                        "WHISPER", new[] { "MARA" }, 0),
+                        "WHISPER", new[] { "MARA" }, 0,
+                        "Quel nom a été murmuré ?", new[] { "Anna", "Mara", "Lena", "Sara" },
+                        "MURMURE", new[] { "MARA" }),
                     Trial("floor-2-trial-5", QuestionType.Observation, 7f,
                         "Which door was open?", new[] { "Left", "Right", "Center", "None" }, 2,
-                        "HALL", new[] { "CENTER DOOR" }, 0),
+                        "HALL", new[] { "CENTER DOOR" }, 0,
+                        "Quelle porte était ouverte ?", new[] { "Gauche", "Droite", "Centre", "Aucune" },
+                        "COULOIR", new[] { "PORTE DU CENTRE" }),
                 }),
 
                 new FloorDefinition(3, "Instructions", new List<FloorTrial>
@@ -68,16 +88,24 @@ namespace DontLetHerIn.Questions
                     FirstTrial(firstTrials[2], firstCues),
                     Trial("floor-3-trial-2", QuestionType.EnvironmentalInstruction, 6f,
                         "Which button should you avoid?", new[] { "Alarm", "Door Open", "Floor 3", "Light" }, 1,
-                        "PANEL WARNING", new[] { "DO NOT OPEN" }, 0),
+                        "PANEL WARNING", new[] { "DO NOT OPEN" }, 0,
+                        "Quel bouton faut-il éviter ?", new[] { "Alarme", "Ouvrir portes", "Étage 3", "Lumière" },
+                        "AVERTISSEMENT PANNEAU", new[] { "NE PAS OUVRIR" }),
                     Trial("floor-3-trial-3", QuestionType.EnvironmentalInstruction, 6f,
                         "Which instruction was safe?", new[] { "Run", "Stay still", "Scream", "Knock" }, 1,
-                        "NOTE", new[] { "STAY STILL" }, 0),
+                        "NOTE", new[] { "STAY STILL" }, 0,
+                        "Quelle consigne était sûre ?", new[] { "Courir", "Rester immobile", "Crier", "Frapper" },
+                        "NOTE", new[] { "RESTER IMMOBILE" }),
                     Trial("floor-3-trial-4", QuestionType.EnvironmentalInstruction, 6f,
                         "Which warning should you obey?", new[] { "Keep quiet", "Look back", "Open up", "Step out" }, 0,
-                        "SIGN", new[] { "KEEP QUIET" }, 0),
+                        "SIGN", new[] { "KEEP QUIET" }, 0,
+                        "Quel avertissement faut-il suivre ?", new[] { "Rester silencieux", "Se retourner", "Ouvrir", "Sortir" },
+                        "PANNEAU", new[] { "RESTER SILENCIEUX" }),
                     Trial("floor-3-trial-5", QuestionType.SangFroid, 6f,
                         "What must you not do?", new[] { "Breathe", "Blink", "Look at her", "Wait" }, 2,
-                        "WALL", new[] { "DO NOT LOOK AT HER" }, 0),
+                        "WALL", new[] { "DO NOT LOOK AT HER" }, 0,
+                        "Que ne dois-tu pas faire ?", new[] { "Respirer", "Cligner", "La regarder", "Attendre" },
+                        "MUR", new[] { "NE LA REGARDE PAS" }),
                 }),
 
                 new FloorDefinition(4, "Audio Proxy / Codes", new List<FloorTrial>
@@ -85,16 +113,24 @@ namespace DontLetHerIn.Questions
                     FirstTrial(firstTrials[3], firstCues),
                     Trial("floor-4-trial-2", QuestionType.Observation, 5f,
                         "Which code was scratched into the wall?", new[] { "914", "941", "491", "149" }, 0,
-                        "SCRATCHED CODE", new[] { "914" }, 0),
+                        "SCRATCHED CODE", new[] { "914" }, 0,
+                        "Quel code était gravé dans le mur ?", new[] { "914", "941", "491", "149" },
+                        "CODE GRAVÉ", new[] { "914" }),
                     Trial("floor-4-trial-3", QuestionType.Observation, 5f,
                         "Which code appeared?", new[] { "358", "385", "538", "583" }, 0,
-                        "DISPLAY CODE", new[] { "358" }, 0),
+                        "DISPLAY CODE", new[] { "358" }, 0,
+                        "Quel code est apparu ?", new[] { "358", "385", "538", "583" },
+                        "CODE AFFICHÉ", new[] { "358" }),
                     Trial("floor-4-trial-4", QuestionType.AudioClue, 5f,
                         "Which tone repeated?", new[] { "Low", "High", "Mid", "None" }, 0,
-                        "SPEAKER", new[] { "LOW TONE" }, 0),
+                        "SPEAKER", new[] { "LOW TONE" }, 0,
+                        "Quel son s'est répété ?", new[] { "Grave", "Aigu", "Médium", "Aucun" },
+                        "HAUT-PARLEUR", new[] { "SON GRAVE" }),
                     Trial("floor-4-trial-5", QuestionType.Anomaly, 5f,
                         "Which digits flashed red?", new[] { "60", "06", "66", "00" }, 1,
-                        "RED DIGITS", new[] { "06" }, 0),
+                        "RED DIGITS", new[] { "06" }, 0,
+                        "Quels chiffres clignotaient en rouge ?", new[] { "60", "06", "66", "00" },
+                        "CHIFFRES ROUGES", new[] { "06" }),
                 }),
 
                 new FloorDefinition(5, "Final Panic", new List<FloorTrial>
@@ -103,19 +139,31 @@ namespace DontLetHerIn.Questions
                     Trial("floor-5-trial-2", QuestionType.SangFroid, 4f,
                         "She is at the door. What should you do?",
                         new[] { "Hold the door", "Answer calmly", "Open it", "Look closer" }, 1,
-                        "FINAL WARNING", new[] { "DO NOT OPEN", "ANSWER CALMLY" }, 1),
+                        "FINAL WARNING", new[] { "DO NOT OPEN", "ANSWER CALMLY" }, 1,
+                        "Elle est à la porte. Que dois-tu faire ?",
+                        new[] { "Tenir la porte", "Répondre calmement", "Ouvrir", "Regarder de plus près" },
+                        "DERNIER AVERTISSEMENT", new[] { "N'OUVRE PAS", "RÉPONDS CALMEMENT" }),
                     Trial("floor-5-trial-3", QuestionType.SangFroid, 4f,
                         "The lights die. What do you do?",
                         new[] { "Scream", "Stay silent", "Run out", "Knock back" }, 1,
-                        "DARK", new[] { "STAY SILENT" }, 0),
+                        "DARK", new[] { "STAY SILENT" }, 0,
+                        "Les lumières s'éteignent. Que fais-tu ?",
+                        new[] { "Crier", "Rester silencieux", "S'enfuir", "Frapper" },
+                        "NOIR", new[] { "RESTER SILENCIEUX" }),
                     Trial("floor-5-trial-4", QuestionType.SangFroid, 4f,
                         "She whispers your name. What do you do?",
                         new[] { "Answer", "Ignore it", "Open door", "Look" }, 1,
-                        "WHISPER", new[] { "DO NOT ANSWER" }, 0),
+                        "WHISPER", new[] { "DO NOT ANSWER" }, 0,
+                        "Elle murmure ton nom. Que fais-tu ?",
+                        new[] { "Répondre", "L'ignorer", "Ouvrir la porte", "Regarder" },
+                        "MURMURE", new[] { "NE RÉPONDS PAS" }),
                     Trial("floor-5-trial-5", QuestionType.SangFroid, 4f,
                         "Last second. The doors must seal. What do you do?",
                         new[] { "Hold breath", "Panic", "Force doors", "Scream" }, 0,
-                        "FINAL", new[] { "HOLD BREATH" }, 0),
+                        "FINAL", new[] { "HOLD BREATH" }, 0,
+                        "Dernière seconde. Les portes doivent se sceller. Que fais-tu ?",
+                        new[] { "Retenir son souffle", "Paniquer", "Forcer les portes", "Crier" },
+                        "FIN", new[] { "RETENIR SON SOUFFLE" }),
                 }),
             };
         }
@@ -140,7 +188,9 @@ namespace DontLetHerIn.Questions
         private static FloorTrial Trial(
             string id, QuestionType type, float timeLimitSeconds,
             string prompt, string[] answers, int correctAnswerIndex,
-            string cueLabel, string[] cueLines, int highlightLineIndex)
+            string cueLabel, string[] cueLines, int highlightLineIndex,
+            string promptFrench, string[] answersFrench,
+            string cueLabelFrench, string[] cueLinesFrench)
         {
             QuestionData question = QuestionData.Create(
                 id: id,
@@ -150,8 +200,10 @@ namespace DontLetHerIn.Questions
                 correctAnswerIndex: correctAnswerIndex,
                 timeLimitSeconds: timeLimitSeconds,
                 difficulty: 1,
-                tags: new[] { "prototype" });
-            var cue = new QuestionCue(id, cueLabel, cueLines, highlightLineIndex);
+                tags: new[] { "prototype" },
+                promptFrench: promptFrench,
+                answersFrench: answersFrench);
+            var cue = new QuestionCue(id, cueLabel, cueLines, highlightLineIndex, cueLabelFrench, cueLinesFrench);
             return new FloorTrial(question, cue);
         }
     }

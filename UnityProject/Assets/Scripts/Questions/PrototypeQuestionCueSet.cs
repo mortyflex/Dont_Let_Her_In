@@ -27,31 +27,41 @@ namespace DontLetHerIn.Questions
                     questionId: "floor-1-observation",
                     label: "ROOM DISPLAY",
                     lines: new[] { "104" },
-                    highlightLineIndex: 0),
+                    highlightLineIndex: 0,
+                    labelFrench: "AFFICHAGE",
+                    linesFrench: new[] { "104" }),
 
                 new QuestionCue(
                     questionId: "floor-2-short-memory",
                     label: "SYMBOLS",
                     lines: new[] { "Eye", "Key", "Hand" },
-                    highlightLineIndex: 1),
+                    highlightLineIndex: 1,
+                    labelFrench: "SYMBOLES",
+                    linesFrench: new[] { "Œil", "Clé", "Main" }),
 
                 new QuestionCue(
                     questionId: "floor-3-environmental",
                     label: "WALL",
                     lines: new[] { "DO NOT LOOK LEFT" },
-                    highlightLineIndex: 0),
+                    highlightLineIndex: 0,
+                    labelFrench: "MUR",
+                    linesFrench: new[] { "NE REGARDE PAS À GAUCHE" }),
 
                 new QuestionCue(
                     questionId: "floor-4-audio-clue",
                     label: "VOICE",
                     lines: new[] { "VOICE: 272" },
-                    highlightLineIndex: 0),
+                    highlightLineIndex: 0,
+                    labelFrench: "VOIX",
+                    linesFrench: new[] { "VOIX : 272" }),
 
                 new QuestionCue(
                     questionId: "floor-5-sang-froid",
                     label: "CONFLICT",
                     lines: new[] { "ELEVATOR: PRESS EXIT NOW", "WALL: WAIT" },
-                    highlightLineIndex: -1),
+                    highlightLineIndex: -1,
+                    labelFrench: "CONFLIT",
+                    linesFrench: new[] { "ASCENSEUR : SORTIE MAINTENANT", "MUR : ATTENDS" }),
             };
         }
 

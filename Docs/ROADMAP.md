@@ -940,7 +940,13 @@ Phase 7E   — Evidence Trial Data Model (DATA_MODEL_ONLY): implemented the pure
              evidence data types (CorridorClue, CorridorClueType, EvidenceAnswerOption,
              EvidenceTrial, FloorObservationSet), an EvidenceTrialValidator and a 25-trial
              PrototypeEvidenceFloorSet (EN/FR). Runtime trial flow still uses PrototypeFloorSet;
-             no camera/visual/scene changes. EditMode tests: 179/179 passing. (This phase.)
+             no camera/visual/scene changes. EditMode tests: 179/179 passing.
+Phase 7F   — Question Content Localization EN/FR: localized the LIVE playable trial content
+             (the 25 PrototypeFloorSet trials) — prompts, answers and cues — via optional
+             French fields on QuestionData/QuestionCue resolved by PrototypeLocalization.Language
+             (Option A). English stays the default; gameplay (index-based correct answer,
+             floor/trial counts, threat tuning) is unchanged. EditMode tests: 189/189 passing.
+             (This phase.)
 ```
 
 Important: Phase 7B.3 (Door Seal) is a **completed experiment that was intentionally
@@ -949,15 +955,13 @@ re-implemented as active gameplay.
 
 ---
 
-## 17C. Recommended Next Phases (after 7E)
+## 17C. Recommended Next Phases (after 7F)
 
-Phase 7E implemented the evidence-trial data model (data only; see
-`Docs/CORRIDOR_OBSERVATION_DESIGN.md`). The recommended sequence to continue:
+Phase 7E implemented the evidence-trial data model (data only) and Phase 7F localized the
+live playable trial content EN/FR (see `Docs/CORRIDOR_OBSERVATION_DESIGN.md`). The
+recommended sequence to continue:
 
 ```txt
-Phase 7F — Question Content Localization EN/FR
-           (localize the live 25 questions/answers/cues used by PrototypeFloorSet; reuse
-            PrototypeLocalization. The evidence prototype set is already EN/FR.)
 Phase 7G — Static Corridor Clue Prototype
            (show one floor's FloorObservationSet clues statically in the corridor; wire
             EvidenceTrials to clueIds in the scene)
@@ -968,6 +972,12 @@ Phase 7I — Evidence-Based Floor Playtest
             remember -> answer)
 ```
 
+Optional follow-up (not blocking):
+
+```txt
+Phase 7F.1 — Language settings UI / persistent language choice (currently code/test-driven only).
+```
+
 Later, still planned (not superseded):
 
 ```txt
@@ -975,8 +985,8 @@ Phase 8 — Mobile Build Readiness (iOS portrait build target, safe area, touch)
 Phase 9 — Visual / Horror Scene Polish (lighting, creature silhouette, audio atmosphere)
 ```
 
-Note: phase numbering shifted from the Phase 7D plan — the evidence data model became 7E
-(done), so question-content localization moved to 7F and the later phases shifted by one.
+Note: the evidence data model became Phase 7E and question-content localization Phase 7F;
+the remaining observation phases shifted accordingly (7G/7H/7I).
 
 Do not jump straight to final art or monetization.
 
@@ -995,12 +1005,14 @@ Documentation aligned to the descent loop in Phase 7C.
 Corridor observation / evidence-based trials direction designed in Phase 7D
   (design only; see Docs/CORRIDOR_OBSERVATION_DESIGN.md). No camera/visual code yet.
 Evidence trial data model implemented in Phase 7E (data only; runtime still uses
-  PrototypeFloorSet). EditMode tests: 179/179 passing.
+  PrototypeFloorSet).
+Live playable trial content localized EN/FR in Phase 7F (prompts/answers/cues), English default.
+  EditMode tests: 189/189 passing.
 No iOS build yet.
 ```
 
 Next planned step:
 
 ```txt
-Phase 7F — Question Content Localization EN/FR (recommended)
+Phase 7G — Static Corridor Clue Prototype (recommended)
 ```

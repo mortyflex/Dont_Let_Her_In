@@ -855,6 +855,46 @@ Accepted
 
 ---
 
+## 2026-06-19 — Localize live playable trial content via additive French fields (Option A)
+
+### Decision
+
+Phase 7F localizes the live playable content (the 25 `PrototypeFloorSet` trials — prompts,
+answers and cues) by adding optional French fields to `QuestionData`
+(`promptFrench`, `answersFrench`) and `QuestionCue` (`labelFrench`, `linesFrench`). The
+existing player-facing getters (`Prompt`, `Answers`, `Label`, `Lines`) resolve to
+`PrototypeLocalization.Language` with English as the fallback. The runtime keeps using
+`PrototypeFloorSet`; `PrototypeEvidenceFloorSet` stays data-only.
+
+### Context
+
+After Phase 7B.4 only UI/status/intro were EN/FR; question prompts, answers and cues were
+English-only. The player should be able to play the prototype fully in French. Phase 7E added
+the evidence data model but did not change the runtime.
+
+### Reasoning
+
+Option A (localize the current `PrototypeFloorSet` directly) is the lowest-risk path: it fixes
+the player-facing limitation without wiring the evidence model into the runtime. Keeping the
+answer model index-based means the correct answer, answer count and floor/trial structure are
+identical across languages, and `GameplayUIController` needs no change (it already reads the
+getters). Option B (evidence adapter at runtime) was deferred as higher risk.
+
+### Consequences
+
+- English remains the default; French is selectable in code/tests
+  (`PrototypeLocalization.Language = GameLanguage.French`); no settings UI yet.
+- `QuestionData`/`QuestionCue` getters now depend on the global current language (consistent
+  with the existing `PrototypeLocalization` pattern); tests that switch language must reset it.
+- Gameplay, threat tuning and descent are unchanged. EditMode tests increased to 189, all passing.
+- A future phase may add a language settings UI and/or a runtime evidence adapter.
+
+### Status
+
+Accepted
+
+---
+
 ## 4. Replaced or Deprecated Decisions
 
 - **Door Seal scoring (Phase 7B.3)** — completed as an experiment, then removed from active
