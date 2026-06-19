@@ -1,7 +1,10 @@
 {
     "name": "DontLetHerIn",
     "rootNamespace": "DontLetHerIn",
-    "references": [],
+    "references": [
+        "UnityEngine.UI",
+        "Unity.InputSystem"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
