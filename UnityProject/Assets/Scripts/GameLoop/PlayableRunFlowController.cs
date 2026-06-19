@@ -31,6 +31,16 @@ namespace DontLetHerIn.GameLoop
         [Tooltip("Extra seconds added after a wrong answer or timeout so the danger has time to register.")]
         [SerializeField] private float dangerHoldExtraSeconds = 0.3f;
 
+        [Header("Inter-floor transition (Phase 7B)")]
+        [Tooltip("Seconds the FLOOR CLEARED message holds when a non-final floor is cleared.")]
+        [SerializeField] private float floorClearedHoldSeconds = 0.7f;
+
+        [Tooltip("Seconds the DOORS CLOSING message holds during the inter-floor transition.")]
+        [SerializeField] private float doorsClosingHoldSeconds = 0.7f;
+
+        [Tooltip("Seconds the ASCENDING message holds before the next floor starts.")]
+        [SerializeField] private float ascendingHoldSeconds = 0.8f;
+
         private RunController _run;
         private QuestionManager _questions;
         private IReadOnlyList<QuestionData> _questionSet;
@@ -188,8 +198,12 @@ namespace DontLetHerIn.GameLoop
                 return;
             }
 
+            // Non-final floor cleared: this is survival, not escape. Let the answer outcome
+            // register (Phase 7 pacing), then play the inter-floor transition before the
+            // next floor begins. After CompleteFloor (and not won), CurrentFloor is the
+            // floor the elevator is climbing to.
             float hold = InterQuestionPacing.GetHoldSeconds(outcome, statusHoldSeconds, dangerHoldExtraSeconds);
-            _advanceRoutine = StartCoroutine(NextQuestionAfterDelay(hold));
+            _advanceRoutine = StartCoroutine(ClearFloorThenAdvance(hold, _run.CurrentFloor));
         }
 
         private void ApplyOutcome(AnswerOutcome outcome)
@@ -204,9 +218,41 @@ namespace DontLetHerIn.GameLoop
             }
         }
 
-        private IEnumerator NextQuestionAfterDelay(float holdSeconds)
+        /// <summary>
+        /// After a non-final floor is cleared: hold on the answer outcome (Phase 7 pacing),
+        /// then play a short UI-only elevator transition (FLOOR CLEARED -> DOORS CLOSING ->
+        /// ASCENDING) that frames the clear as temporary safety, then start the next floor.
+        /// Danger is paused during the transition: no threat/creature change is applied here.
+        /// </summary>
+        private IEnumerator ClearFloorThenAdvance(float outcomeHold, int nextFloor)
         {
-            yield return new WaitForSeconds(holdSeconds);
+            yield return new WaitForSeconds(outcomeHold);
+            if (!_run.IsRunning) { _advanceRoutine = null; yield break; }
+
+            if (ui != null)
+            {
+                ui.BeginFloorTransition();
+                ui.ShowFloorTransition(FloorTransitionText.ClearedTitle, FloorTransitionText.GetClearedSubtitle());
+            }
+            yield return new WaitForSeconds(floorClearedHoldSeconds);
+
+            if (ui != null)
+            {
+                ui.ShowFloorTransition(FloorTransitionText.DoorsClosingTitle, FloorTransitionText.GetDoorsClosingSubtitle());
+            }
+            yield return new WaitForSeconds(doorsClosingHoldSeconds);
+
+            if (ui != null)
+            {
+                // Reveal the floor we are climbing to during the ascent.
+                ui.UpdateFloor(nextFloor, _run.TotalFloors);
+                ui.ShowFloorTransition(FloorTransitionText.AscendingTitle,
+                    FloorTransitionText.GetAscendingSubtitle(nextFloor, _run.TotalFloors));
+            }
+            yield return new WaitForSeconds(ascendingHoldSeconds);
+
+            if (ui != null) ui.HideFloorTransition();
+
             _advanceRoutine = null;
             if (_run.IsRunning)
             {

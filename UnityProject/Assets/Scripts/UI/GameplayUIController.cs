@@ -71,9 +71,14 @@ namespace DontLetHerIn.UI
         private GameObject _cueZone;
         private Text _cueLabel;
         private Text _cueLines;
+        private GameObject _questionPanel;
         private Text _questionText;
         private Text _statusText;
         private Text _proximityText;
+
+        private GameObject _floorTransitionPanel;
+        private Text _floorTransitionTitle;
+        private Text _floorTransitionSubtitle;
         private Text _resultText;
         private Text _resultSubtitleText;
 
@@ -123,6 +128,7 @@ namespace DontLetHerIn.UI
             _startPanel.SetActive(true);
             _gameplayRoot.SetActive(false);
             _resultPanel.SetActive(false);
+            HideFloorTransition();
         }
 
         public void ShowGameplay()
@@ -130,6 +136,7 @@ namespace DontLetHerIn.UI
             _startPanel.SetActive(false);
             _gameplayRoot.SetActive(true);
             _resultPanel.SetActive(false);
+            HideFloorTransition();
             SetStatus(string.Empty, TextColor);
             ResetFeedback();
         }
@@ -148,6 +155,7 @@ namespace DontLetHerIn.UI
         public void ShowResult(bool won, string detail)
         {
             _gameplayRoot.SetActive(true); // keep HUD visible behind the result overlay
+            HideFloorTransition();
             _resultPanel.SetActive(true);
 
             // Dark/red overlay on loss, neutral dark on win.
@@ -206,6 +214,40 @@ namespace DontLetHerIn.UI
         public void HideCue()
         {
             if (_cueZone != null) _cueZone.SetActive(false);
+        }
+
+        /// <summary>
+        /// Enter the inter-floor transition (Phase 7B): hide the question, cue, answers and
+        /// status so the lower screen reads as a safe "doors closing / ascending" moment,
+        /// while the corridor and top HUD stay visible. Use <see cref="ShowFloorTransition"/>
+        /// to set the messages and <see cref="HideFloorTransition"/> to leave it.
+        /// </summary>
+        public void BeginFloorTransition()
+        {
+            if (_questionPanel != null) _questionPanel.SetActive(false);
+            HideCue();
+            for (int i = 0; i < AnswerButtonCount; i++)
+            {
+                if (_answerButtons[i] != null) _answerButtons[i].gameObject.SetActive(false);
+            }
+            SetStatus(string.Empty, TextColor);
+            if (_proximityText != null) _proximityText.text = string.Empty;
+            if (_floorTransitionPanel != null) _floorTransitionPanel.SetActive(true);
+        }
+
+        /// <summary>Set the floor-transition title/subtitle (panel shown if not already).</summary>
+        public void ShowFloorTransition(string title, string subtitle)
+        {
+            if (_floorTransitionPanel != null) _floorTransitionPanel.SetActive(true);
+            if (_floorTransitionTitle != null) _floorTransitionTitle.text = title ?? string.Empty;
+            if (_floorTransitionSubtitle != null) _floorTransitionSubtitle.text = subtitle ?? string.Empty;
+        }
+
+        /// <summary>Leave the inter-floor transition. The next question rebuilds its own UI.</summary>
+        public void HideFloorTransition()
+        {
+            if (_floorTransitionPanel != null) _floorTransitionPanel.SetActive(false);
+            if (_questionPanel != null) _questionPanel.SetActive(true);
         }
 
         private static string FormatCueLines(QuestionCue cue)
@@ -494,6 +536,7 @@ namespace DontLetHerIn.UI
 
             RectTransform qPanel = CreatePanel("QuestionPanel", root, HudPanelColor,
                 new Vector2(0.04f, 0.335f), new Vector2(0.96f, 0.400f));
+            _questionPanel = qPanel.gameObject;
             _questionText = CreateText("QuestionText", qPanel, string.Empty, 38, TextAnchor.MiddleCenter,
                 new Vector2(0.03f, 0.05f), new Vector2(0.97f, 0.95f));
 
@@ -513,6 +556,22 @@ namespace DontLetHerIn.UI
                 _answerButtons[i] = button;
                 _answerLabels[i] = label;
             }
+
+            // ---- FLOOR TRANSITION OVERLAY ----
+            // Translucent band over the lower question/answer area only, so the corridor
+            // and creature stay visible above it. Shown between floors (FLOOR CLEARED /
+            // DOORS CLOSING / ASCENDING); never receives input and starts hidden.
+            RectTransform transitionPanel = CreatePanel("FloorTransitionPanel", root, DimColor,
+                new Vector2(0.04f, 0.02f), new Vector2(0.96f, 0.46f));
+            _floorTransitionPanel = transitionPanel.gameObject;
+            _floorTransitionTitle = CreateText("FloorTransitionTitle", transitionPanel, string.Empty, 56,
+                TextAnchor.MiddleCenter, new Vector2(0.05f, 0.52f), new Vector2(0.95f, 0.92f));
+            _floorTransitionTitle.fontStyle = FontStyle.Bold;
+            _floorTransitionTitle.color = GoodColor;
+            _floorTransitionSubtitle = CreateText("FloorTransitionSubtitle", transitionPanel, string.Empty, 34,
+                TextAnchor.MiddleCenter, new Vector2(0.06f, 0.10f), new Vector2(0.94f, 0.48f));
+            _floorTransitionSubtitle.color = TextColor;
+            _floorTransitionPanel.SetActive(false);
         }
 
         private void BuildStartPanel(RectTransform parent)
