@@ -931,7 +931,11 @@ Phase 7B.4 — Descent loop + intro + localization prep (CURRENT gameplay):
              Tests: 148/148 EditMode passing.
 Phase 7C   — Documentation alignment: align all docs with the Phase 7B.4 descent loop and
              mark Door Seal / ascending / score-based-clear / one-question-per-floor as
-             obsolete. (This phase.)
+             obsolete.
+Phase 7D   — Corridor Observation & Evidence-Based Trials DESIGN (documentation/design only):
+             define how future trials become evidence-based corridor observation puzzles
+             (observe -> remember -> return -> answer). Added Docs/CORRIDOR_OBSERVATION_DESIGN.md.
+             No camera/visual/gameplay code implemented. (This phase.)
 ```
 
 Important: Phase 7B.3 (Door Seal) is a **completed experiment that was intentionally
@@ -940,16 +944,34 @@ re-implemented as active gameplay.
 
 ---
 
-## 17C. Recommended Next Phases (after 7C)
+## 17C. Recommended Next Phases (after 7D)
+
+Phase 7D established the corridor-observation / evidence-based-trials direction (design only,
+see `Docs/CORRIDOR_OBSERVATION_DESIGN.md`). The recommended sequence to implement it:
 
 ```txt
-Phase 7D — Playtest Polish / Flow Readability
-           (descent clarity, intro readability, pacing of the 5-trial rhythm, threat readability)
 Phase 7E — Question Content Localization EN/FR
-           (translate question / answer / cue content; currently English-only)
-Phase 8  — Mobile Build Readiness (iOS portrait build target, safe area, touch)
-Phase 9  — Visual / Horror Scene Polish (lighting, creature silhouette, audio atmosphere)
+           (localize the current 25 prototype questions/answers/cues; reuse PrototypeLocalization)
+Phase 7F — Evidence Trial Data Model
+           (implement CorridorClue, FloorObservationSet, EvidenceTrial as pure data; EditMode-tested)
+Phase 7G — Static Corridor Clue Prototype
+           (author one floor's clues, shown statically in the corridor; trials reference clueIds)
+Phase 7H — Observation Camera Pass Prototype
+           (ObservationPhaseController: slow forward/backward camera travel + handoff to trials)
+Phase 7I — Evidence-Based Floor Playtest
+           (convert Floor 5 to evidence-based trials; playtest observe -> remember -> answer)
 ```
+
+Later, still planned (not superseded):
+
+```txt
+Phase 8 — Mobile Build Readiness (iOS portrait build target, safe area, touch)
+Phase 9 — Visual / Horror Scene Polish (lighting, creature silhouette, audio atmosphere)
+```
+
+Note: the earlier "Phase 7D — Playtest Polish / Flow Readability" placeholder (proposed in
+Phase 7C) is folded into Phase 7I (evidence-based floor playtest) and ongoing manual checks;
+Phase 7D was reassigned to the corridor-observation design.
 
 Do not jump straight to final art or monetization.
 
@@ -965,11 +987,13 @@ Latest gameplay commit: 9cb1bc7 — Phase 7B.4 descent loop and intro localizati
 Tests: 148/148 EditMode passing.
 Door Seal / score-based floor clear: removed from active gameplay (Phase 7B.4).
 Documentation aligned to the descent loop in Phase 7C.
+Corridor observation / evidence-based trials direction designed in Phase 7D
+  (design only; see Docs/CORRIDOR_OBSERVATION_DESIGN.md). No camera/visual code yet.
 No iOS build yet.
 ```
 
 Next planned step:
 
 ```txt
-Phase 7D — Playtest Polish / Flow Readability (recommended)
+Phase 7E — Question Content Localization EN/FR (recommended)
 ```

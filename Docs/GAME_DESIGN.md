@@ -139,6 +139,43 @@ Future work: question-content localization EN/FR, mobile build readiness, visual
 Keep the loop replaceable: trials, floors and threat tuning are data/config, not hardcoded rules.
 ```
 
+### 0.12 Corridor Observation and Evidence-Based Trials (planned next layer)
+
+> **Planned, not yet implemented (Phase 7D design).** The descent loop already has 5 trials
+> per floor. The next gameplay layer makes those trials **evidence-based corridor
+> observation puzzles**. Full design lives in `Docs/CORRIDOR_OBSERVATION_DESIGN.md`.
+
+Intended evolution:
+
+```txt
+From: the player answers abstract questions in the elevator.
+To:   the player observes the hallway, memorizes details, returns to the elevator,
+      then answers trials based on what was actually visible.
+```
+
+Planned per-floor flow (wraps the current trial flow; threat/descent rules unchanged):
+
+```txt
+doors open
+observation camera travels forward into the hallway  (PLANNED — not implemented)
+floor-specific clues are exposed (door numbers, symbols, lights, messages, objects, anomalies)
+observation camera travels backward to the elevator   (PLANNED)
+trial sequence begins; each trial asks about a visible clue
+correct = trial consumed, threat does NOT recede; wrong/timeout = threat closer
+survive all 5 trials -> descend
+```
+
+Core principle:
+
+```txt
+No trial without a corridor clue. No correct answer without observable evidence.
+Distractors must be plausible, never random. The corridor stays structurally consistent
+across floors while the details (clues/anomalies) change per floor.
+```
+
+Status: the current 25 prototype trials are the technical base; future trial content should
+be grounded in visible corridor clues. The camera travel is **not** implemented yet.
+
 ---
 
 ## 1. Design Summary

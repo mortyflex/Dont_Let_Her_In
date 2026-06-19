@@ -702,6 +702,122 @@ Accepted
 
 ---
 
+## 2026-06-19 — Trials should become corridor-evidence-based
+
+### Decision
+
+Future trial content should be grounded in visible corridor clues rather than abstract
+quiz questions. Each trial asks about something the player observed in the hallway.
+
+### Context
+
+The descent loop has 5 trials per floor, but the current prototype questions can read like
+an abstract quiz disconnected from the corridor. Phase 7D defines an evidence-based
+direction (see `Docs/CORRIDOR_OBSERVATION_DESIGN.md`).
+
+### Reasoning
+
+Grounding trials in observed evidence makes them feel fair, memorable and diegetic — it
+matches the `horror-game-design` pillar "the environment is part of the question" and turns
+the corridor into the source of the puzzle instead of a backdrop.
+
+### Consequences
+
+- Future content uses an `EvidenceTrial` that references a `CorridorClue` (`clueId`).
+- Distractors must be plausible alternatives derived from the observation, not random.
+- The current 25 prototype trials remain as the technical base until converted.
+
+### Status
+
+Accepted (planned — design only; not yet implemented)
+
+---
+
+## 2026-06-19 — Corridor layout stays mostly consistent while clues vary per floor
+
+### Decision
+
+The corridor remains structurally consistent across floors (same elevator framing, depth,
+door positions, panels, fixtures); only the details (numbers, symbols, lights, messages,
+objects, anomalies) change per floor.
+
+### Context
+
+A stable layout lets the player learn the space once, then notice what changed.
+
+### Reasoning
+
+Consistency makes anomaly-based trials fair ("what changed?" only works against a known
+baseline) and keeps art/scope manageable for a prototype (one corridor, varied details).
+
+### Consequences
+
+- A future `FloorObservationSet` binds per-floor clues to shared corridor visual anchors.
+- Anomaly clues become a first-class, fair clue type once the baseline is observable.
+
+### Status
+
+Accepted (planned)
+
+---
+
+## 2026-06-19 — Introduce an observation camera pass before the trial sequence (future phase)
+
+### Decision
+
+Before a floor's trials begin, an observation pass will play: the camera slowly travels
+forward into the hallway to expose clues, then travels back to the elevator, then hands off
+to the trials. This is planned for a future phase, not implemented now.
+
+### Context
+
+Evidence-based trials require the player to have actually seen the clues first.
+
+### Reasoning
+
+A short observe-then-return pass creates the observe -> remember -> answer rhythm and a
+moment of false safety before the pressure of the trials, without changing threat/descent rules.
+
+### Consequences
+
+- A future `ObservationPhaseController` sequences the camera travel and raises an
+  "observation complete" handoff; `PlayableRunFlowController` starts trials only after it.
+- Camera travel, animation and tuning (`observationSeconds`) are deferred to Phase 7H.
+
+### Status
+
+Accepted (planned — not yet implemented)
+
+---
+
+## 2026-06-19 — No trial without visible evidence
+
+### Decision
+
+No trial may exist without a visible corridor clue, and no correct answer may exist without
+observable evidence. Every trial references a `clueId` that is observable before the trial.
+
+### Context
+
+This is the core fairness rule for the evidence-based direction.
+
+### Reasoning
+
+It guarantees the player can always reason "I saw this, so I know the answer", eliminating
+unfair quiz-style questions and ambiguous answer validation.
+
+### Consequences
+
+- Validation (future tests) must check that every `EvidenceTrial.clueId` exists in the
+  floor's `FloorObservationSet` and that the correct answer matches the clue's evidence.
+- Each floor must expose at least as many usable clues as it has trials (>= 5).
+
+### Status
+
+Accepted (planned)
+
+---
+
 ## 4. Replaced or Deprecated Decisions
 
 - **Door Seal scoring (Phase 7B.3)** — completed as an experiment, then removed from active

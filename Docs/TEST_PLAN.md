@@ -833,6 +833,37 @@ DOORS CLOSING -> DESCENDING) are verified manually in Play Mode (see playtest ch
 
 ---
 
+## 22C. Future Test Expectations — Corridor Observation & Evidence Trials (planned)
+
+> **Planned, not yet implemented (Phase 7D design).** These expectations apply when the
+> evidence-based trial layer is built (see `Docs/CORRIDOR_OBSERVATION_DESIGN.md`). They are
+> recorded now so future agents know the validation bar. No tests exist for this yet.
+
+EditMode (pure data) expectations:
+
+```txt
+Every EvidenceTrial references a clueId.
+Every referenced clueId exists in the floor's FloorObservationSet.
+Each floor exposes enough visible clues for its trials (minCluesForTrials >= trial count, >= 5).
+Each correct answer (correctAnswerId) matches the referenced clue's evidenceValue.
+Distractors are present and marked (plausibilityNote set); no answer set is correct-only.
+Clue ids and trial ids are unique within a floor.
+Clue text, trial prompt and answers have EN/FR coverage (or are language-independent visuals).
+```
+
+PlayMode / manual expectations:
+
+```txt
+The observation phase can complete and hand off to the trial sequence.
+Mobile readability: clue size/contrast readable in portrait; no color-only recognition.
+Camera forward/backward pass plays and ends in a state where trials can start.
+Threat/descent rules unchanged: correct consumes trial without receding; wrong/timeout move closer.
+```
+
+These tests must not change the current threat, descent or localization rules.
+
+---
+
 ## 23. Current Test Status
 
 Current status:

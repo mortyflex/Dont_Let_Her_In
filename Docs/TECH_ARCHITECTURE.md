@@ -98,6 +98,51 @@ ScriptableObject assets. The architecture stays compatible with adding them late
 
 ---
 
+## 1C. Planned Architecture — Corridor Observation & Evidence Trials (proposed)
+
+> **Proposed / planned only — none of the types below are implemented.** Full design is in
+> `Docs/CORRIDOR_OBSERVATION_DESIGN.md`. This subsection records the intended architecture
+> so future phases stay consistent. Do not treat these as existing systems.
+
+Goal: evolve trials into evidence-based corridor observation puzzles (observe -> remember ->
+return -> answer) without changing the threat or descent rules.
+
+Proposed pure-data types (EditMode-testable, no Unity dependency), evolving today's
+`QuestionData` / `QuestionCue` / `FloorTrial` / `FloorDefinition`:
+
+```txt
+CorridorClueType (enum) - DoorNumber, WallMessage, Symbol, LightState, ObjectPlacement,
+                          Anomaly, ColorCue, AudioProxy, ShadowOrSilhouette, DirectionInstruction
+CorridorClue            - id, type, floorDisplayNumber, label, localizedDescription,
+                          visualAnchor, evidenceValue, difficultyWeight, isRequiredForTrial
+                          (generalizes QuestionCue with an in-world visual anchor + evidence)
+FloorObservationSet     - floorDisplayNumber, clues, observationSeconds, minCluesForTrials
+EvidenceAnswerOption    - id, localizedText, isCorrect, plausibilityNote
+EvidenceTrial           - id, clueId (REQUIRED, must exist), prompt, answers, correctAnswerId,
+                          timeLimit, difficulty, localization (generalizes FloorTrial)
+```
+
+Proposed MonoBehaviours (presentation/sequencing only — own NO trial/threat rules):
+
+```txt
+ObservationPhaseController    - plays forward/backward camera travel, exposes the floor's
+                                clues, raises an "observation complete" event for handoff.
+CorridorObservationController - binds a FloorObservationSet to corridor visual anchors,
+                                swaps per-floor clue visuals while keeping the corridor
+                                structurally consistent.
+```
+
+Planned integration: in a future phase, `PlayableRunFlowController` requests an observation
+pass when a floor begins (via `ObservationPhaseController`) and starts the trial sequence
+only after the handoff. The current trial flow, `ThreatManager` rules, `DescentFloorProfile`
+tuning and descent transitions remain unchanged. Localization reuses the existing
+`PrototypeLocalization` / `LocalizedText` / `GameLanguage` approach.
+
+Recommended phasing: 7E (question localization EN/FR) -> 7F (evidence data model) ->
+7G (static corridor clues) -> 7H (observation camera pass) -> 7I (evidence-based floor playtest).
+
+---
+
 ## 2. Architecture Principles
 
 The project must follow these principles:

@@ -135,6 +135,28 @@ Note: question / answer / cue text is still English-only even when the UI is set
 
 ---
 
+## 3C. Future Checklist — Corridor Observation (planned)
+
+> **Planned, not yet implemented (Phase 7D design).** Use this once the evidence-based
+> observation layer exists (see `Docs/CORRIDOR_OBSERVATION_DESIGN.md`). Items are unchecked;
+> no observation playtest has been performed.
+
+```txt
+[ ] Does the observation phase feel too long or too short?
+[ ] Can the player remember 5 clues from one observation pass?
+[ ] Are the clues readable in mobile portrait (size, contrast)?
+[ ] Do the trials feel fair (answer deducible from what was seen)?
+[ ] Do answers feel connected to the corridor (not a random quiz)?
+[ ] Are the distractors plausible (similar numbers/symbols/instructions), not arbitrary?
+[ ] Does the forward/backward camera travel create tension rather than frustration?
+[ ] Is the corridor recognizably the same across floors, with only details changed?
+[ ] Are anomalies noticeable against the learned baseline?
+[ ] Does the handoff observation -> trials feel clean (no dead time / confusion)?
+[ ] French smoke check: clue labels/descriptions, prompts and answers read correctly in FR.
+```
+
+---
+
 ## 4. Manual Playtest Checklist
 
 For every playable build, test:
