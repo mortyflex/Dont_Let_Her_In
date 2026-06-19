@@ -84,6 +84,33 @@ namespace DontLetHerIn.GameLoop
             _threat.ApplyCorrectSlow();
         }
 
+        /// <summary>
+        /// Record a correct trial that builds Door Seal WITHOUT pushing the creature back
+        /// (Phase 7B.3 non-receding threat). Counts toward correct-answer stats only; the
+        /// Door Seal score itself is owned by the flow. The threat distance is unchanged.
+        /// </summary>
+        public void RecordCorrectSealed()
+        {
+            if (!IsRunning) return;
+            CorrectAnswers++;
+        }
+
+        /// <summary>
+        /// Reset the threat to a floor-specific starting distance with stress cleared
+        /// (Phase 7B.3 per-floor reset). The previous floor's threat is blocked by the
+        /// closed doors, so the next floor starts as a fresh danger cycle.
+        /// </summary>
+        public void ResetThreatForFloor(int startDistance)
+        {
+            _threat.ResetTo(startDistance, 0);
+        }
+
+        /// <summary>
+        /// End the run as a loss while the player is still technically alive (e.g. Door Seal
+        /// too low at the end of a floor — the doors would not close).
+        /// </summary>
+        public void FailRun() => MarkLost();
+
         /// <summary>Record a wrong answer; may trigger loss if the creature reaches the elevator.</summary>
         public void RecordWrongAnswer()
         {

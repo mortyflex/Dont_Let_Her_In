@@ -83,6 +83,22 @@ namespace DontLetHerIn.Threat
             return CurrentState;
         }
 
+        /// <summary>
+        /// Reset distance and stress to explicit values (Phase 7B.3 per-floor reset).
+        /// Used when a new floor starts as a fresh danger cycle: the doors closed, so the
+        /// threat does not carry over and begins at the floor's own starting distance.
+        /// Values are clamped to the valid ranges.
+        /// </summary>
+        public ThreatState ResetTo(int distance, int stress)
+        {
+            _distance = Clamp(distance, MinDistance, MaxDistance);
+            _stress = Clamp(stress, MinStress, MaxStress);
+            _lastDistanceDelta = 0;
+            _lastStressDelta = 0;
+            StateChanged?.Invoke(CurrentState);
+            return CurrentState;
+        }
+
         private ThreatState Apply(int distanceDelta, int stressDelta)
         {
             int newDistance = Clamp(_distance + distanceDelta, MinDistance, MaxDistance);

@@ -41,10 +41,14 @@ namespace DontLetHerIn.GameLoop
         [Tooltip("Seconds the ASCENDING message holds before the next floor starts.")]
         [SerializeField] private float ascendingHoldSeconds = 0.8f;
 
+        private const string LossReasonCaught = "She reached the elevator.";
+        private const string LossReasonSeal = "The doors would not close.";
+
         private RunController _run;
         private QuestionManager _questions;
         private IReadOnlyList<FloorDefinition> _floors;
         private RunTrialProgress _progress;
+        private readonly DoorSealScore _doorSeal = new DoorSealScore();
         private Coroutine _advanceRoutine;
         private bool _eventsBound;
 
@@ -151,9 +155,23 @@ namespace DontLetHerIn.GameLoop
             _run.StartRun();
             _progress.Reset();
             if (ui != null) ui.ShowGameplay();
+            BeginFloor(); // floor 1 threat + Door Seal reset, creature + HUD refresh
+            StartCurrentTrial();
+        }
+
+        /// <summary>
+        /// Start a floor as a fresh danger cycle (Phase 7B.3): reset the threat to this
+        /// floor's configured starting distance (stress cleared) and reset the Door Seal to
+        /// this floor's required threshold, then refresh the creature and HUD.
+        /// </summary>
+        private void BeginFloor()
+        {
+            int floor = _progress.CurrentFloorNumber;
+            _run.ResetThreatForFloor(FloorThreatProfile.StartDistance(floor));
+            _doorSeal.StartFloor(FloorThreatProfile.DoorSealThreshold(floor));
             UpdateCreature();
             RefreshThreatHud();
-            StartCurrentTrial();
+            RefreshDoorSealHud();
         }
 
         private void StartCurrentTrial()
@@ -190,32 +208,45 @@ namespace DontLetHerIn.GameLoop
         private void HandleAnswerResolved(AnswerResult result)
         {
             AnswerOutcome outcome = AnswerOutcomeResolver.Resolve(result);
-            ApplyOutcome(outcome); // updates threat via RunController; may mark loss
+
+            // Door Seal is scored from the threat proximity BEFORE any penalty is applied.
+            int distanceBefore = _run.Threat.Distance;
+            float sealPoints = DoorSealScoring.Score(outcome, distanceBefore);
+
+            ApplyOutcome(outcome); // wrong/timeout advance threat (+ death); correct never recedes
+            _doorSeal.Add(sealPoints);
 
             UpdateCreature();
             RefreshThreatHud();
+            RefreshDoorSealHud();
             if (ui != null)
             {
                 ui.ShowOutcomeStatus(outcome);
                 ui.SetAnswersInteractable(false);
             }
 
-            // Every trial result (correct/wrong/timeout) consumes the current trial
-            // (Phase 7B.2). Death overrides everything; otherwise we either advance to the
-            // next trial of the same floor, clear the floor, or escape on the final floor.
+            // Every trial result consumes the current trial (Phase 7B.2). Phase 7B.3: the
+            // floor clears on its last trial only if the Door Seal threshold was reached;
+            // otherwise the doors would not close and the run is lost. Death overrides all.
             TrialResolution resolution = TrialFlowResolver.Resolve(
-                _run.HasLost, _progress.IsFinalTrialInFloor, _progress.IsFinalFloor);
+                _run.HasLost, _progress.IsFinalTrialInFloor, _progress.IsFinalFloor, _doorSeal.IsSealed);
             float hold = InterQuestionPacing.GetHoldSeconds(outcome, statusHoldSeconds, dangerHoldExtraSeconds);
 
             switch (resolution)
             {
                 case TrialResolution.Lost:
-                    ShowResult(won: false);
+                    ShowResult(won: false, lossReason: LossReasonCaught);
+                    return;
+
+                case TrialResolution.SealFailed:
+                    // Survived the floor's trials but the doors would not close.
+                    _run.FailRun();
+                    ShowResult(won: false, lossReason: LossReasonSeal);
                     return;
 
                 case TrialResolution.Escaped:
-                    _run.CompleteFloor(); // final floor fully cleared -> marks the run won
-                    ShowResult(won: true);
+                    _run.CompleteFloor(); // final floor sealed -> marks the run won
+                    ShowResult(won: true, lossReason: null);
                     return;
 
                 case TrialResolution.NextTrialSameFloor:
@@ -226,8 +257,8 @@ namespace DontLetHerIn.GameLoop
                     return;
 
                 case TrialResolution.FloorCleared:
-                    // Last trial of a non-final floor survived: advance both the run (floor
-                    // stats/threat owner) and the trial progress, then play the transition.
+                    // Last trial of a non-final floor sealed: advance both the run (floor
+                    // stats) and the trial progress, then play the transition.
                     _run.CompleteFloor();
                     _progress.AdvanceFloor();
                     _advanceRoutine = StartCoroutine(ClearFloorThenAdvance(hold));
@@ -239,9 +270,13 @@ namespace DontLetHerIn.GameLoop
         {
             switch (outcome)
             {
-                case AnswerOutcome.CorrectFast: _run.RecordCorrectFast(); break;
-                case AnswerOutcome.CorrectNormal: _run.RecordCorrectNormal(); break;
-                case AnswerOutcome.CorrectSlow: _run.RecordCorrectSlow(); break;
+                // Correct answers build Door Seal but never push the creature back during a
+                // floor (Phase 7B.3 non-receding threat).
+                case AnswerOutcome.CorrectFast:
+                case AnswerOutcome.CorrectNormal:
+                case AnswerOutcome.CorrectSlow:
+                    _run.RecordCorrectSealed();
+                    break;
                 case AnswerOutcome.Wrong: _run.RecordWrongAnswer(); break;
                 case AnswerOutcome.Timeout: _run.RecordTimeout(); break;
             }
@@ -286,6 +321,10 @@ namespace DontLetHerIn.GameLoop
                 ui.ShowFloorTransition(FloorTransitionText.DoorsClosingTitle, FloorTransitionText.GetDoorsClosingSubtitle());
             }
             yield return new WaitForSeconds(doorsClosingHoldSeconds);
+
+            // New floor = fresh danger cycle: reset threat to this floor's start distance and
+            // Door Seal to its threshold (creature + HUD refresh). Done during the ascent.
+            BeginFloor();
 
             if (ui != null)
             {
@@ -349,7 +388,13 @@ namespace DontLetHerIn.GameLoop
             ui.UpdateProximity(distance);
         }
 
-        private void ShowResult(bool won)
+        private void RefreshDoorSealHud()
+        {
+            if (ui == null) return;
+            ui.UpdateDoorSeal(_doorSeal.CurrentRounded, _doorSeal.Required);
+        }
+
+        private void ShowResult(bool won, string lossReason)
         {
             StopAdvanceRoutine();
             if (ui == null) return;
@@ -358,8 +403,8 @@ namespace DontLetHerIn.GameLoop
             string detail =
                 $"Floors cleared: {result.FloorsCompleted}/{_run.TotalFloors}\n" +
                 $"Correct: {result.CorrectAnswers}   Wrong: {result.WrongAnswers}   Timeouts: {result.Timeouts}\n" +
-                $"Final distance: {result.FinalDistance}";
-            ui.ShowResult(won, detail);
+                $"Door Seal: {_doorSeal.CurrentRounded}/{_doorSeal.Required}   Distance: {result.FinalDistance}";
+            ui.ShowResult(won, detail, lossReason);
         }
     }
 }

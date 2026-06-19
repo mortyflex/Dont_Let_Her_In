@@ -65,6 +65,7 @@ namespace DontLetHerIn.UI
 
         private Text _floorText;
         private Text _threatText;
+        private Text _doorSealText;
         private RectTransform _timerFill;
         private Image _timerFillImage;
         private Text _timerText;
@@ -152,7 +153,7 @@ namespace DontLetHerIn.UI
             if (_proximityText != null) _proximityText.text = string.Empty;
         }
 
-        public void ShowResult(bool won, string detail)
+        public void ShowResult(bool won, string detail, string lossSubtitle = null)
         {
             _gameplayRoot.SetActive(true); // keep HUD visible behind the result overlay
             HideFloorTransition();
@@ -169,8 +170,10 @@ namespace DontLetHerIn.UI
 
             if (_resultSubtitleText != null)
             {
-                _resultSubtitleText.text = (won ? "The doors finally close." : "You hesitated too long.")
-                    + "\n\n" + detail;
+                string subtitle = won
+                    ? "The doors finally close."
+                    : (string.IsNullOrEmpty(lossSubtitle) ? "You hesitated too long." : lossSubtitle);
+                _resultSubtitleText.text = subtitle + "\n\n" + detail;
                 _resultSubtitleText.color = TextColor;
             }
 
@@ -315,6 +318,18 @@ namespace DontLetHerIn.UI
             _floorText.text = $"FLOOR {floor} / {totalFloors}   —   TRIAL {trial} / {totalTrials}";
         }
 
+        /// <summary>
+        /// Show the Door Seal progress for the current floor (Phase 7B.3): correct answers
+        /// raise it, wrong/timeout do not, and the doors close only when it reaches the
+        /// required threshold. Turns green once the threshold is met.
+        /// </summary>
+        public void UpdateDoorSeal(int current, int required)
+        {
+            if (_doorSealText == null) return;
+            _doorSealText.text = $"DOOR SEAL {current} / {required}";
+            _doorSealText.color = current >= required ? GoodColor : WarnColor;
+        }
+
         public void UpdateThreat(int distance, int stress, CreaturePhase phase)
         {
             _threatText.text = $"DIST {distance}   STRESS {stress}   {PhaseLabel(phase)}";
@@ -365,15 +380,15 @@ namespace DontLetHerIn.UI
             switch (outcome)
             {
                 case AnswerOutcome.CorrectFast:
-                    SetStatus("FAST — SHE RECOILS", GoodColor);
+                    SetStatus("FAST — DOOR SEAL RISING", GoodColor);
                     Flash(FlashGood, 0.18f, 0.22f);
                     break;
                 case AnswerOutcome.CorrectNormal:
-                    SetStatus("CORRECT — KEEP MOVING", GoodColor);
+                    SetStatus("CORRECT — SEAL HOLDING", GoodColor);
                     Flash(FlashGood, 0.10f, 0.18f);
                     break;
                 case AnswerOutcome.CorrectSlow:
-                    SetStatus("TOO SLOW — BARELY", WarnColor);
+                    SetStatus("TOO SLOW — BARELY SEALED", WarnColor);
                     Flash(WarnColor, 0.10f, 0.18f);
                     break;
                 case AnswerOutcome.Wrong:
@@ -493,13 +508,19 @@ namespace DontLetHerIn.UI
             _dangerOverlay.raycastTarget = false;
 
             // ---- TOP HUD (compact translucent band; corridor stays visible) ----
-            _floorText = CreateText("FloorText", root, "FLOOR 1 / 5   —   TRIAL 1 / 2", 38, TextAnchor.MiddleCenter,
+            _floorText = CreateText("FloorText", root, "FLOOR 1 / 5   —   TRIAL 1 / 5", 38, TextAnchor.MiddleCenter,
                 new Vector2(0.05f, 0.952f), new Vector2(0.95f, 0.995f));
             _floorText.fontStyle = FontStyle.Bold;
 
-            _threatText = CreateText("ThreatText", root, "DIST 70   STRESS 0   FAR", 40,
-                TextAnchor.MiddleCenter, new Vector2(0.04f, 0.902f), new Vector2(0.96f, 0.948f));
+            // Row 2 shares threat (left) and Door Seal (right) so both stay visible.
+            _threatText = CreateText("ThreatText", root, "DIST 85   STRESS 0   FAR", 32,
+                TextAnchor.MiddleLeft, new Vector2(0.04f, 0.902f), new Vector2(0.56f, 0.948f));
             _threatText.fontStyle = FontStyle.Bold;
+
+            _doorSealText = CreateText("DoorSealText", root, "DOOR SEAL 0 / 180", 32,
+                TextAnchor.MiddleRight, new Vector2(0.56f, 0.902f), new Vector2(0.96f, 0.948f));
+            _doorSealText.fontStyle = FontStyle.Bold;
+            _doorSealText.color = WarnColor;
 
             // Timer bar (background + fill) with the numeric label overlaid inside it.
             RectTransform timerBg = CreatePanel("TimerBar", root, new Color(0.08f, 0.08f, 0.08f, 0.92f),
