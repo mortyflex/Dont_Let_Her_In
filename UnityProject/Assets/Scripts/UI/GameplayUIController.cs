@@ -35,6 +35,12 @@ namespace DontLetHerIn.UI
         private static readonly Color BadColor = new Color(0.92f, 0.32f, 0.3f, 1f);
         private static readonly Color WarnColor = new Color(0.95f, 0.72f, 0.25f, 1f);
 
+        // Compact translucent panels so the corridor stays visible behind the HUD.
+        private static readonly Color HudPanelColor = new Color(0f, 0f, 0f, 0.45f);
+        private static readonly Color CuePanelColor = new Color(0.05f, 0.02f, 0.02f, 0.6f);
+        private static readonly Color CueColor = new Color(0.95f, 0.30f, 0.27f, 1f);
+        private static readonly Color CueDimColor = new Color(0.78f, 0.78f, 0.74f, 1f);
+
         /// <summary>Raised when the player presses Start.</summary>
         public event Action StartClicked;
 
@@ -53,7 +59,11 @@ namespace DontLetHerIn.UI
         private Text _floorText;
         private Text _threatText;
         private RectTransform _timerFill;
+        private Image _timerFillImage;
         private Text _timerText;
+        private GameObject _cueZone;
+        private Text _cueLabel;
+        private Text _cueLines;
         private Text _questionText;
         private Text _statusText;
         private Text _resultText;
@@ -124,6 +134,51 @@ namespace DontLetHerIn.UI
             }
         }
 
+        /// <summary>
+        /// Show the clue that justifies the current question in the cue zone above the
+        /// corridor. A null cue hides the zone. The highlighted line (e.g. the centered
+        /// symbol) is wrapped in markers so it reads as the intended answer source.
+        /// </summary>
+        public void ShowCue(QuestionCue cue)
+        {
+            if (cue == null)
+            {
+                HideCue();
+                return;
+            }
+
+            _cueLabel.text = cue.Label ?? string.Empty;
+            _cueLines.text = FormatCueLines(cue);
+            _cueZone.SetActive(true);
+        }
+
+        /// <summary>Hide the clue zone (no clue for this question or run not active).</summary>
+        public void HideCue()
+        {
+            if (_cueZone != null) _cueZone.SetActive(false);
+        }
+
+        private static string FormatCueLines(QuestionCue cue)
+        {
+            if (cue.Lines.Count == 0) return string.Empty;
+
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < cue.Lines.Count; i++)
+            {
+                if (i > 0) sb.Append('\n');
+                bool highlight = cue.HasHighlight && i == cue.HighlightLineIndex && cue.Lines.Count > 1;
+                if (highlight)
+                {
+                    sb.Append("» ").Append(cue.Lines[i]).Append(" «");
+                }
+                else
+                {
+                    sb.Append(cue.Lines[i]);
+                }
+            }
+            return sb.ToString();
+        }
+
         public void SetAnswersInteractable(bool interactable)
         {
             for (int i = 0; i < AnswerButtonCount; i++)
@@ -140,6 +195,23 @@ namespace DontLetHerIn.UI
             _timerFill.offsetMin = Vector2.zero;
             _timerFill.offsetMax = Vector2.zero;
             _timerText.text = remaining.ToString("0.0") + "s";
+
+            // Timer pressure: bar colour shifts and a warning rises as time runs out.
+            Color pressure = ratio > 0.5f ? GoodColor : (ratio > 0.25f ? WarnColor : BadColor);
+            if (_timerFillImage != null) _timerFillImage.color = pressure;
+
+            if (ratio <= 0.25f)
+            {
+                SetStatus("SHE IS CLOSER", BadColor);
+            }
+            else if (ratio <= 0.5f)
+            {
+                SetStatus("Hurry — she stirs", WarnColor);
+            }
+            else
+            {
+                SetStatus(string.Empty, TextColor);
+            }
         }
 
         public void UpdateFloor(int floor, int totalFloors)
@@ -149,7 +221,36 @@ namespace DontLetHerIn.UI
 
         public void UpdateThreat(int distance, int stress, CreaturePhase phase)
         {
-            _threatText.text = $"DISTANCE {distance}   STRESS {stress}   [{phase}]";
+            _threatText.text = $"DIST {distance}   STRESS {stress}   {PhaseLabel(phase)}";
+            _threatText.color = ThreatColor(phase);
+        }
+
+        private static string PhaseLabel(CreaturePhase phase)
+        {
+            switch (phase)
+            {
+                case CreaturePhase.Far: return "FAR";
+                case CreaturePhase.Visible: return "SEEN";
+                case CreaturePhase.MidCorridor: return "MID";
+                case CreaturePhase.NearDoor: return "NEAR";
+                case CreaturePhase.AtDoor: return "AT DOOR";
+                case CreaturePhase.Attack: return "ATTACK";
+                default: return phase.ToString().ToUpperInvariant();
+            }
+        }
+
+        private static Color ThreatColor(CreaturePhase phase)
+        {
+            switch (phase)
+            {
+                case CreaturePhase.Far:
+                case CreaturePhase.Visible:
+                    return GoodColor;
+                case CreaturePhase.MidCorridor:
+                    return WarnColor;
+                default:
+                    return BadColor;
+            }
         }
 
         public void SetStatus(string message, Color color)
@@ -207,42 +308,63 @@ namespace DontLetHerIn.UI
             _gameplayRoot = CreateContainer("GameplayRoot", parent);
             var root = (RectTransform)_gameplayRoot.transform;
 
-            _floorText = CreateText("FloorText", root, "FLOOR 1 / 5", 40, TextAnchor.MiddleCenter,
-                new Vector2(0.05f, 0.92f), new Vector2(0.95f, 0.98f));
+            // ---- TOP HUD (compact translucent band; corridor stays visible) ----
+            _floorText = CreateText("FloorText", root, "FLOOR 1 / 5", 42, TextAnchor.MiddleCenter,
+                new Vector2(0.05f, 0.952f), new Vector2(0.95f, 0.995f));
+            _floorText.fontStyle = FontStyle.Bold;
 
-            _threatText = CreateText("ThreatText", root, "DISTANCE 70   STRESS 0   [Far]", 32,
-                TextAnchor.MiddleCenter, new Vector2(0.05f, 0.86f), new Vector2(0.95f, 0.91f));
+            _threatText = CreateText("ThreatText", root, "DIST 70   STRESS 0   FAR", 40,
+                TextAnchor.MiddleCenter, new Vector2(0.04f, 0.902f), new Vector2(0.96f, 0.948f));
+            _threatText.fontStyle = FontStyle.Bold;
 
-            // Timer bar (background + fill) and numeric label.
-            RectTransform timerBg = CreatePanel("TimerBar", root, new Color(0.1f, 0.1f, 0.1f, 0.9f),
-                new Vector2(0.1f, 0.80f), new Vector2(0.9f, 0.835f));
-            RectTransform fill = CreatePanel("TimerFill", timerBg, AccentColor,
+            // Timer bar (background + fill) with the numeric label overlaid inside it.
+            RectTransform timerBg = CreatePanel("TimerBar", root, new Color(0.08f, 0.08f, 0.08f, 0.92f),
+                new Vector2(0.06f, 0.856f), new Vector2(0.94f, 0.896f));
+            _timerFill = CreatePanel("TimerFill", timerBg, GoodColor, new Vector2(0f, 0f), new Vector2(1f, 1f));
+            _timerFillImage = _timerFill.GetComponent<Image>();
+            _timerText = CreateText("TimerText", timerBg, "0.0s", 30, TextAnchor.MiddleCenter,
                 new Vector2(0f, 0f), new Vector2(1f, 1f));
-            _timerFill = fill;
-            _timerText = CreateText("TimerText", root, "0.0s", 28, TextAnchor.MiddleCenter,
-                new Vector2(0.1f, 0.755f), new Vector2(0.9f, 0.795f));
+            _timerText.fontStyle = FontStyle.Bold;
 
-            // Question panel.
-            RectTransform qPanel = CreatePanel("QuestionPanel", root, PanelColor,
-                new Vector2(0.05f, 0.56f), new Vector2(0.95f, 0.74f));
-            _questionText = CreateText("QuestionText", qPanel, string.Empty, 44, TextAnchor.MiddleCenter,
-                new Vector2(0.05f, 0.05f), new Vector2(0.95f, 0.95f));
+            // ---- CLUE ZONE (top of the corridor view) ----
+            // Small translucent panel that names where the question's clue came from.
+            RectTransform cuePanel = CreatePanel("CueZone", root, CuePanelColor,
+                new Vector2(0.10f, 0.760f), new Vector2(0.90f, 0.846f));
+            _cueZone = cuePanel.gameObject;
+            _cueLabel = CreateText("CueLabel", cuePanel, string.Empty, 26, TextAnchor.UpperCenter,
+                new Vector2(0.04f, 0.62f), new Vector2(0.96f, 0.98f));
+            _cueLabel.color = CueDimColor;
+            _cueLabel.fontStyle = FontStyle.Bold;
+            _cueLines = CreateText("CueLines", cuePanel, string.Empty, 38, TextAnchor.UpperCenter,
+                new Vector2(0.04f, 0.04f), new Vector2(0.96f, 0.60f));
+            _cueLines.color = CueColor;
+            _cueLines.fontStyle = FontStyle.Bold;
+            _cueZone.SetActive(false);
 
-            // Status / feedback text.
-            _statusText = CreateText("StatusText", root, string.Empty, 36, TextAnchor.MiddleCenter,
-                new Vector2(0.05f, 0.50f), new Vector2(0.95f, 0.555f));
+            // ---- MIDDLE (0.42 - 0.76) intentionally left clear: corridor + creature ----
 
-            // Four answer buttons stacked vertically.
-            float top = 0.49f;
-            float height = 0.10f;
-            float gap = 0.005f;
+            // ---- BOTTOM: feedback + compact question + answers ----
+            _statusText = CreateText("StatusText", root, string.Empty, 38, TextAnchor.MiddleCenter,
+                new Vector2(0.05f, 0.405f), new Vector2(0.95f, 0.455f));
+            _statusText.fontStyle = FontStyle.Bold;
+
+            RectTransform qPanel = CreatePanel("QuestionPanel", root, HudPanelColor,
+                new Vector2(0.04f, 0.335f), new Vector2(0.96f, 0.400f));
+            _questionText = CreateText("QuestionText", qPanel, string.Empty, 38, TextAnchor.MiddleCenter,
+                new Vector2(0.03f, 0.05f), new Vector2(0.97f, 0.95f));
+
+            // Four answer buttons stacked vertically across the bottom (thumb-friendly).
+            float top = 0.325f;
+            float height = 0.068f;
+            float gap = 0.008f;
             for (int i = 0; i < AnswerButtonCount; i++)
             {
                 float yMax = top - i * (height + gap);
                 float yMin = yMax - height;
                 int index = i; // capture
                 Button button = CreateButton($"AnswerButton{i}", root, out Text label,
-                    new Vector2(0.1f, yMin), new Vector2(0.9f, yMax));
+                    new Vector2(0.08f, yMin), new Vector2(0.92f, yMax));
+                label.fontSize = 40;
                 button.onClick.AddListener(() => AnswerSelected?.Invoke(index));
                 _answerButtons[i] = button;
                 _answerLabels[i] = label;

@@ -31,6 +31,7 @@ namespace DontLetHerIn.GameLoop
         private RunController _run;
         private QuestionManager _questions;
         private IReadOnlyList<QuestionData> _questionSet;
+        private IReadOnlyDictionary<string, QuestionCue> _cues;
         private Coroutine _advanceRoutine;
         private bool _eventsBound;
 
@@ -51,6 +52,7 @@ namespace DontLetHerIn.GameLoop
             }
 
             _questionSet = PrototypeQuestionSet.BuildAll();
+            _cues = PrototypeQuestionCueSet.BuildById();
             _run = new RunController(_questionSet.Count);
             _questions = new QuestionManager();
             _questions.AnswerResolved += HandleAnswerResolved;
@@ -150,6 +152,7 @@ namespace DontLetHerIn.GameLoop
             {
                 ui.UpdateFloor(_run.CurrentFloor, _run.TotalFloors);
                 ui.ShowQuestion(question);
+                ShowCueForQuestion(question);
                 ui.SetAnswersInteractable(true);
                 ui.UpdateTimer(question.TimeLimitSeconds, question.TimeLimitSeconds);
             }
@@ -217,6 +220,19 @@ namespace DontLetHerIn.GameLoop
         }
 
         // ---- View helpers --------------------------------------------------
+
+        private void ShowCueForQuestion(QuestionData question)
+        {
+            if (ui == null) return;
+            if (_cues != null && question != null && _cues.TryGetValue(question.Id, out QuestionCue cue))
+            {
+                ui.ShowCue(cue);
+            }
+            else
+            {
+                ui.HideCue();
+            }
+        }
 
         private void UpdateCreature()
         {
