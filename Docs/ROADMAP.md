@@ -905,24 +905,71 @@ Do not choose all options at once.
 
 ---
 
+## 17B. Phase 7B Series — Floor Progression and Descent (history)
+
+Phase 7 (floor content) was followed by an iterative 7B series that reshaped floor
+progression. This history is kept so the agent does not re-introduce superseded mechanics.
+
+```txt
+Phase 7B   — Floor progression / inter-floor transitions.
+Phase 7B.1 — Correct-only floor clear (clear a floor by answering correctly).
+             Superseded by the multi-trial flow.
+Phase 7B.2 — Multi-trial floors (5 trials per floor instead of one question per floor).
+Phase 7B.3 — Door Seal scoring experiment: correct trials built a "Door Seal" score and a
+             floor was cleared only if the score passed a threshold; threat was made
+             non-receding. COMPLETED EXPERIMENT, then intentionally SUPERSEDED — the
+             score/Door Seal mechanic was removed from active gameplay.
+Phase 7B.4 — Descent loop + intro + localization prep (CURRENT gameplay):
+             * run starts at Floor 5 and descends 5 -> 4 -> 3 -> 2 -> 1 -> Ground Floor;
+             * each floor has 5 trials, cleared by SURVIVING all 5 (no score, no Door Seal);
+             * threat is non-receding during a floor and resets per floor (deeper = closer);
+             * correct = trial consumed, threat unchanged; wrong/timeout move threat closer;
+             * loss = SHE GOT IN; escape after Floor 1 = GROUND FLOOR / YOU ESCAPED;
+             * narrative intro before the run; lightweight EN/FR localization for UI/status/intro
+               (question content still English-only).
+             Commit: 9cb1bc7 "🎮 feat(gameplay): add descent loop and intro localization".
+             Tests: 148/148 EditMode passing.
+Phase 7C   — Documentation alignment: align all docs with the Phase 7B.4 descent loop and
+             mark Door Seal / ascending / score-based-clear / one-question-per-floor as
+             obsolete. (This phase.)
+```
+
+Important: Phase 7B.3 (Door Seal) is a **completed experiment that was intentionally
+superseded**, not a current mechanic. Door Seal scoring must not be documented or
+re-implemented as active gameplay.
+
+---
+
+## 17C. Recommended Next Phases (after 7C)
+
+```txt
+Phase 7D — Playtest Polish / Flow Readability
+           (descent clarity, intro readability, pacing of the 5-trial rhythm, threat readability)
+Phase 7E — Question Content Localization EN/FR
+           (translate question / answer / cue content; currently English-only)
+Phase 8  — Mobile Build Readiness (iOS portrait build target, safe area, touch)
+Phase 9  — Visual / Horror Scene Polish (lighting, creature silhouette, audio atmosphere)
+```
+
+Do not jump straight to final art or monetization.
+
+---
+
 ## 18. Current Roadmap Status
 
 Current status:
 
 ```txt
-Documentation setup in progress
-Unity project not yet implemented
-Prototype v0.1 not started
-No gameplay code yet
-No Unity scene yet
+Phases 0–7 implemented; 7B series complete through Phase 7B.4 (descent loop).
+Latest gameplay commit: 9cb1bc7 — Phase 7B.4 descent loop and intro localization.
+Tests: 148/148 EditMode passing.
+Door Seal / score-based floor clear: removed from active gameplay (Phase 7B.4).
+Documentation aligned to the descent loop in Phase 7C.
+No iOS build yet.
 ```
 
-Next planned step after docs:
+Next planned step:
 
 ```txt
-Create Unity 6 URP project
-Set iOS as initial target
-Create clean folder structure
-Create Game.unity
-Commit project foundation
+Phase 7D — Playtest Polish / Flow Readability (recommended)
 ```

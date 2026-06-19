@@ -524,9 +524,194 @@ Accepted
 
 ---
 
+## 2026-06-19 — Use a descent loop instead of ascending progression
+
+### Decision
+
+The run is a **descent**: the player starts on a high floor and descends floor by floor to the Ground Floor to escape. Prototype v0.1 starts at Floor 5 and goes 5 -> 4 -> 3 -> 2 -> 1 -> Ground Floor.
+
+### Context
+
+Earlier prototype framing described moving "up" floors and ending on a victory after the final floor without a clear spatial direction. Phase 7B.4 committed an explicit descent with a narrative intro (wake up high, get to the ground floor).
+
+### Reasoning
+
+A descent gives the run a clear, readable goal ("reach the ground floor and escape") and a natural difficulty ramp (the deeper you go, the closer the threat starts).
+
+### Consequences
+
+- The displayed floor number counts DOWN (Floor 5 first, Floor 1 last before the Ground Floor).
+- Escape (win) happens at the Ground Floor; ascending/"YOU ESCAPED after climbing" wording is obsolete.
+- `DescentFloorProfile` owns the display order and per-floor start distance.
+
+### Status
+
+Accepted
+
+---
+
+## 2026-06-19 — Remove the Door Seal score mechanic from active gameplay
+
+### Decision
+
+The Door Seal scoring mechanic (Phase 7B.3) is removed from active gameplay. Floors are not cleared by reaching a score threshold.
+
+### Context
+
+Phase 7B.3 experimented with correct trials building a "Door Seal" score, where a floor was cleared only if the score passed a threshold and a too-low seal could fail the run. Phase 7B.4 replaced this with a simpler survival model.
+
+### Reasoning
+
+The score/threshold gate added cognitive load and a second failure axis that muddied the core tension. Surviving the trials is a clearer, more honest clear condition.
+
+### Consequences
+
+- A floor is cleared by surviving all 5 trials, with no score gate.
+- `RecordCorrectSealed` records a correct answer without threat movement; there is no Door Seal score, `FloorThreatProfile` or `FloorTransitionText` in the active flow.
+- Documentation must not describe Door Seal / score-based clear / score-based loss as current gameplay.
+
+### Status
+
+Superseded / Removed from active gameplay (experiment completed in Phase 7B.3, removed in Phase 7B.4)
+
+---
+
+## 2026-06-19 — Make the threat non-receding during a floor
+
+### Decision
+
+The threat never recedes during a floor. A correct answer consumes the trial and lets the player continue but does not push the creature back. Only wrong answers and timeouts move the threat closer.
+
+### Context
+
+The original model let fast/correct answers add distance (+18/+10/+3). Phase 7B.4 made the threat non-receding within a floor and resets it per floor.
+
+### Reasoning
+
+A non-receding threat keeps constant pressure and removes the "farm distance with easy answers" loop. Relief comes from surviving the floor and descending, not from regained distance.
+
+### Consequences
+
+- Confirmed values: correct = no change; wrong = -20 distance / +1 stress; timeout = -30 distance / +2 stress.
+- Threat and stress reset at the start of each floor to the floor's start distance (Floor 5=85 .. Floor 1=65).
+- The historical receding-threat values in `Docs/GAME_DESIGN.md` Section 6 are kept only as history.
+
+### Status
+
+Accepted
+
+---
+
+## 2026-06-19 — Floor clear is survival-based, not score-based
+
+### Decision
+
+A floor is cleared by surviving all 5 trials of that floor. There is no score requirement to clear a floor or to win.
+
+### Context
+
+Companion decision to removing Door Seal. Clarifies the explicit clear condition.
+
+### Reasoning
+
+Survival-based clearing is the simplest readable rule under pressure and matches the descent fantasy.
+
+### Consequences
+
+- `TrialFlowResolver` maps (isDead, isFinalTrial, isFinalFloor) to Lost / NextTrialSameFloor / FloorCleared / Escaped — no score input.
+- A result-screen score may exist in a future phase but must never gate clearing or loss.
+
+### Status
+
+Accepted
+
+---
+
+## 2026-06-19 — Prototype uses 5 floors; full game may use ~15
+
+### Decision
+
+Prototype v0.1 uses 5 floors (5 trials each, 25 trials). The full game may start higher, such as Floor 15, for a longer descent.
+
+### Context
+
+Extends the earlier "3 to 5 floors" decision now that the descent is committed and content is authored as 5 floors x 5 trials.
+
+### Reasoning
+
+5 floors are enough to prove the descent and difficulty ramp without overbuilding content. A deeper start (e.g. Floor 15) is a content-scaling decision for later.
+
+### Consequences
+
+- `PrototypeFloorSet` defines 5 floors x 5 trials; `DescentFloorProfile` clamps start distance for floors 1–5.
+- Scaling to ~15 floors later will need additional content and start-distance tuning.
+
+### Status
+
+Accepted
+
+---
+
+## 2026-06-19 — Plan EN/FR localization from the beginning
+
+### Decision
+
+English and French are planned from the beginning. Phase 7B.4 ships lightweight code-based localization for key UI/status/intro strings; question content remains English-only for now.
+
+### Context
+
+The user communicates in French and the game targets a French-speaking audience as well as English.
+
+### Reasoning
+
+Building a small localization layer early (English default, French available) avoids retrofitting it later, while deferring the larger task of translating question content.
+
+### Consequences
+
+- `PrototypeLocalization` + `LocalizedText` + `GameLanguage` provide switchable EN/FR strings (no Unity Localization package, no settings UI yet).
+- Question / answer / cue content localization is deferred (recommended Phase 7E).
+
+### Status
+
+Accepted
+
+---
+
+## 2026-06-19 — Add a narrative intro before gameplay
+
+### Decision
+
+A short narrative intro is shown before the run, establishing the situation (wake up on Floor 5, the hallway is not empty) and the goal (answer trials, do not let her in, reach the ground floor), ending with BEGIN DESCENT.
+
+### Context
+
+Players need context for why they are trapped and what the objective is before the first trial.
+
+### Reasoning
+
+A brief intro frames the descent and the threat without a long lore dump, improving readability of the loop.
+
+### Consequences
+
+- The intro text is localized (EN/FR) via `PrototypeLocalization`.
+- The intro must stay short and readable in portrait.
+
+### Status
+
+Accepted
+
+---
+
 ## 4. Replaced or Deprecated Decisions
 
-No replaced or deprecated decisions yet.
+- **Door Seal scoring (Phase 7B.3)** — completed as an experiment, then removed from active
+  gameplay in Phase 7B.4. See the 2026-06-19 decision above. Floors are now cleared by
+  surviving 5 trials, not by a score threshold.
+- **Receding threat / "correct answer pushes the creature back"** — replaced by the
+  non-receding threat model (2026-06-19). The historical +distance values remain only as
+  history in `Docs/GAME_DESIGN.md` Section 6.
+- **Ascending / one-question-per-floor framing** — replaced by the descent loop with 5
+  trials per floor (2026-06-19).
 
 ---
 

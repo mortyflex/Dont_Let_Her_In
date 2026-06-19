@@ -786,22 +786,67 @@ Git status is clean after commit
 
 ---
 
+## 22B. Phase 7B.4 Descent Loop Test Expectations
+
+The current gameplay is the Phase 7B.4 descent loop. The EditMode suite must reflect this
+behavior (and explicitly NOT the old ascending / score / Door Seal model).
+
+Expected coverage:
+
+```txt
+Descent starts at Floor 5 (top floor shown first).
+Progression Floor 5 -> 4 -> 3 -> 2 -> 1 -> Ground Floor (DescentFloorProfile display order).
+Per-floor start distance: Floor 5=85, 4=80, 3=75, 2=70, 1=65 (DescentFloorProfile.StartDistance).
+Each floor has 5 trials (PrototypeFloorSet: FloorCount=5, TrialsPerFloor=5, 25 total).
+A correct answer consumes the trial and does NOT move the threat back (RecordCorrectSealed).
+A wrong answer consumes the trial and moves the threat closer (-20, stress +1).
+A timeout consumes the trial and moves the threat closer strongly (-30, stress +2).
+The threat never recedes within a floor (NonRecedingThreatTests).
+Threat and stress reset at the start of each floor (ThreatManager.ResetTo / ResetThreatForFloor).
+Surviving all 5 trials of a non-final floor -> FloorCleared (descend).
+Surviving all 5 trials of Floor 1 -> Escaped -> Ground Floor (YOU ESCAPED).
+Threat distance <= 0 -> Lost -> SHE GOT IN (TrialFlowResolver).
+No score / Door Seal gate is required to clear a floor (Door Seal is absent).
+Language switching EN/FR works in code/tests (LocalizationTests, PrototypeLocalization).
+Restart resets run, trial progress and threat after a win or a loss.
+```
+
+Relevant EditMode test files (existing):
+
+```txt
+DescentProgressionTests.cs
+NonRecedingThreatTests.cs
+TrialFlowResolverTests.cs
+RunTrialProgressTests.cs
+PrototypeFloorSetTests.cs
+LocalizationTests.cs
+ThreatManagerTests.cs
+RunControllerTests.cs
+QuestionManagerTests.cs / QuestionEvaluatorTests.cs
+AnswerOutcomeResolverTests.cs / InterQuestionPacingTests.cs
+CreatureControllerTests.cs / CreatureDistanceMapperTests.cs / ThreatProximityFeedbackTests.cs
+PrototypeQuestionSetTests.cs / PrototypeQuestionCueSetTests.cs
+```
+
+The narrative intro before the run and the floor-transition messages (FLOOR CLEARED ->
+DOORS CLOSING -> DESCENDING) are verified manually in Play Mode (see playtest checklist).
+
+---
+
 ## 23. Current Test Status
 
 Current status:
 
 ```txt
-Documentation setup in progress
-Unity project not yet implemented
-No gameplay code yet
-No tests yet
-No Play Mode checks yet
-No iOS build checks yet
+148/148 EditMode tests passing after Phase 7B.4.
+Descent loop, non-receding threat, trial flow, per-floor reset and EN/FR localization are covered by EditMode tests.
+Intro readability, floor transitions and French UI smoke check are manual Play Mode checks.
+No iOS build checks yet.
 ```
 
 Next expected test activity:
 
 ```txt
-After Phase 0: validate project structure
-After Phase 1: add ThreatManager and RunController EditMode tests
+Phase 7D: confirm flow readability manually; add tests only if new logic is introduced.
+Phase 7E: add tests for question-content localization once questions are translated.
 ```

@@ -2,14 +2,17 @@
 
 ## Project Summary
 
-**Don’t Let Her In** is a mobile first-person horror survival quiz prototype.
+**Don’t Let Her In** is a mobile portrait horror elevator trial prototype.
 
-The player is trapped inside an elevator. At each floor, the doors open onto a creepy corridor. A female entity approaches while the player answers short survival questions.
+The player wakes up high inside a sinister building, trapped in an elevator with the doors open. At each floor, a hallway threat (the creature) approaches. The objective is to **descend floor by floor and reach the Ground Floor to escape**.
 
-Fast correct answers push her away.  
-Slow correct answers barely help.  
-Wrong answers and timeouts bring her closer.  
-If she reaches the elevator, the player dies.
+Each floor holds **5 trials** (short survival challenges). The threat **never recedes during a floor**:
+
+- Correct answer: consumes the trial, lets the player continue. The threat does not move back.
+- Wrong answer: consumes the trial, the threat moves closer.
+- Timeout: consumes the trial, the threat moves closer strongly.
+
+Surviving all 5 trials of a floor closes the doors and descends to the next floor down. If the threat reaches the elevator, **SHE GOT IN**. Surviving Floor 1 reaches the **Ground Floor — YOU ESCAPED**.
 
 Main promise:
 
@@ -22,26 +25,27 @@ Main promise:
 Current milestone:
 
 ```txt
-Prototype v0.1 — First Fear Loop
+Prototype v0.1 — First Fear Loop (descent)
 ```
 
 The goal is not to build the full game yet.
 
-The goal is to prove the core loop:
+The goal is to prove the core descent loop:
 
 ```txt
-Question starts
+Floor starts (threat reset to this floor's start distance)
+Trial starts (1 of 5)
 Timer starts
-Creature advances
 Player answers
-Answer is evaluated
-Threat distance changes
-Next floor or death
+Answer is evaluated (correct / wrong / timeout)
+Trial is consumed; wrong/timeout move the threat closer
+Repeat until all 5 trials survived -> doors close -> descend
+Reach Ground Floor -> escape, or threat reaches elevator -> caught
 ```
 
 The prototype should answer this question:
 
-> Is it tense and fun to answer short questions while watching a creature approach?
+> Is it tense and fun to answer short trials while watching a creature approach during a descent?
 
 ---
 
@@ -100,18 +104,20 @@ one fixed elevator camera
 one elevator placeholder
 one corridor placeholder
 one creature placeholder
-3 to 5 floors
-5 to 10 questions
+descent: Floor 5 -> Floor 4 -> Floor 3 -> Floor 2 -> Floor 1 -> Ground Floor
+5 trials per floor (25 trials total)
+narrative intro before the run
 timer
 answer buttons
-threat distance
+non-receding threat distance (threat does not move back during a floor)
 stress
 wrong answer feedback
 timeout feedback
-death
-victory
+loss when the threat reaches the elevator (SHE GOT IN)
+escape after surviving Floor 1 (Ground Floor — YOU ESCAPED)
 restart
 basic result screen
+EN/FR localization prep for UI/status/intro strings (question content still EN)
 basic logic tests
 ```
 
@@ -364,27 +370,28 @@ Defines:
 ## Current Development Status
 
 ```txt
-Documentation setup in progress
-Unity project not yet implemented
-No gameplay code yet
-No Unity scene yet
-No tests yet
+Latest gameplay commit: Phase 7B.4 — descent loop, intro context and localization prep
+Current tests: 148/148 EditMode passing
+Playable descent loop: Floor 5 -> Ground Floor, 5 trials per floor
+Door Seal / score-based floor clear: removed from active gameplay (Phase 7B.4)
+Narrative intro before the run: present
+EN/FR localization prep: present for UI/status/intro strings (question content still EN)
 No iOS build yet
 ```
+
+Art and audio remain placeholders; this is a prototype, not a final-quality build.
 
 ---
 
 ## Next Planned Step
 
-After documentation is complete:
+The descent loop and its documentation (Phase 7C) are in place. Recommended next phases:
 
 ```txt
-Create Unity 6 URP project inside UnityProject/
-Configure iOS as initial target
-Create clean Unity folder structure
-Create Game.unity
-Validate project opens
-Commit project foundation
+Phase 7D — Playtest Polish / Flow Readability
+Phase 7E — Question Content Localization EN/FR
+Phase 8 — Mobile Build Readiness (iOS portrait)
+Phase 9 — Visual / Horror Scene Polish
 ```
 
 ---

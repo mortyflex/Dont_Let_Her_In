@@ -1,10 +1,151 @@
 # Game Design — Don’t Let Her In
 
+> **Authoritative design note (Phase 7B.4):** Sections 0 and 0.x below describe the
+> current, committed game loop and override any older wording later in this document.
+> The game is a **descent**: the player starts high and descends to the Ground Floor.
+> The threat **never recedes during a floor**. There is **no score / Door Seal**
+> floor-clear mechanic. Older sections that describe correct answers pushing the
+> creature back, one-question-per-floor, ascending progression, or score-based clearing
+> are kept for history and explicitly marked as superseded.
+
+## 0. Current Official Loop (Phase 7B.4)
+
+### 0.1 Core Fantasy
+
+The player wakes up high inside a sinister building, trapped in an open elevator. A female hallway threat (the creature) waits down the corridor and comes closer with every mistake. The player cannot run or move — they can only answer the trials and try to descend to the Ground Floor and escape.
+
+```txt
+You are trapped high in the building. You cannot run.
+You can only answer, survive the floor, and descend.
+Every second of hesitation brings her closer.
+```
+
+### 0.2 Run Structure
+
+```txt
+Narrative intro (wake up on Floor 5, BEGIN DESCENT)
+-> Floor 5 (5 trials)
+-> Floor 4 (5 trials)
+-> Floor 3 (5 trials)
+-> Floor 2 (5 trials)
+-> Floor 1 (5 trials)
+-> Ground Floor (YOU ESCAPED)
+```
+
+A floor is a fresh danger cycle: when it starts, the threat is reset to that floor's starting distance and stress is cleared (the closed doors blocked the previous floor's threat).
+
+### 0.3 Descent Progression
+
+```txt
+The displayed floor number counts DOWN: 5 -> 4 -> 3 -> 2 -> 1 -> Ground Floor.
+The deeper the descent, the closer the threat starts (less safety).
+After clearing a non-final floor: FLOOR CLEARED -> DOORS CLOSING -> DESCENDING -> next floor.
+After clearing Floor 1: GROUND FLOOR -> YOU ESCAPED.
+```
+
+### 0.4 Floor Structure
+
+```txt
+Each floor has exactly 5 trials.
+Prototype total: 5 floors x 5 trials = 25 trials.
+A trial is one short challenge with a cue, a prompt, answers and a timer.
+A floor is cleared by SURVIVING all 5 trials (no score required).
+```
+
+### 0.5 Trial Rules
+
+Every trial result consumes the current trial (it is never re-asked):
+
+```txt
+Correct answer: trial consumed, player continues, threat does NOT move back.
+Wrong answer:   trial consumed, threat moves closer.
+Timeout:        trial consumed, threat moves closer strongly (worse than wrong).
+```
+
+### 0.6 Threat Rules (non-receding)
+
+The threat distance runs 0..100 (0 = caught). Confirmed prototype values (`ThreatManager`):
+
+```txt
+Correct (fast / normal / slow): no distance change, no stress change.
+Wrong answer: -20 distance, stress +1.
+Timeout:      -30 distance, stress +2.
+Caught:       distance <= 0.
+```
+
+The threat **never recedes during a floor**. It only resets between floors, to the floor's starting distance (deeper = closer):
+
+```txt
+Floor 5 start distance: 85
+Floor 4 start distance: 80
+Floor 3 start distance: 75
+Floor 2 start distance: 70
+Floor 1 start distance: 65
+```
+
+### 0.7 Win / Loss Conditions
+
+```txt
+Win  (escape): survive all 5 trials of Floor 1 -> reach the Ground Floor -> YOU ESCAPED.
+Loss (caught): threat distance reaches 0 at any point -> SHE GOT IN.
+```
+
+### 0.8 Intro Narrative
+
+A short narrative intro is shown before the run (localized). It establishes the situation and the goal, then offers BEGIN DESCENT:
+
+```txt
+You wake up on the 5th floor.
+The elevator is open. The hallway should be empty.
+It is not.
+Answer the trials. Do not let her in. Reach the ground floor.
+```
+
+### 0.9 Localization Direction
+
+Lightweight, code-based localization (no Unity Localization package, no asset pipeline):
+
+```txt
+English is the default language.
+French is available for key UI / status / intro / transition / result strings.
+The language can be switched in code/tests; there is no settings UI yet.
+Question / answer / cue content remains English-only for now.
+```
+
+French visible equivalents used in the UI:
+
+```txt
+ÉTAGE (FLOOR)
+ÉPREUVE (TRIAL)
+REZ-DE-CHAUSSÉE (GROUND FLOOR)
+DESCENTE / DESCENDING
+TU ES SORTI (YOU ESCAPED)
+ELLE EST ENTRÉE (SHE GOT IN)
+```
+
+### 0.10 Prototype Scope
+
+```txt
+5 floors, 5 trials each (25 trials), one creature, one corridor, one fixed camera.
+Placeholder art/audio. Mobile portrait. Narrative intro. EN/FR UI prep.
+Question content is prototype-quality, code-authored, English-only.
+```
+
+### 0.11 Future Expansion
+
+```txt
+Full game may start higher (such as Floor 15) for a longer descent.
+Future work: question-content localization EN/FR, mobile build readiness, visual/horror polish.
+Keep the loop replaceable: trials, floors and threat tuning are data/config, not hardcoded rules.
+```
+
+---
+
 ## 1. Design Summary
 
-**Don’t Let Her In** is a mobile first-person horror survival quiz prototype.
+**Don’t Let Her In** is a mobile portrait horror elevator trial prototype.
 
-The player is trapped in an elevator. At each floor, the doors open onto a creepy corridor. A female entity approaches while the player answers short survival challenges.
+The player wakes up high in a sinister building, trapped in an open elevator. At each floor, the corridor holds a female hallway threat that comes closer with every mistake. The player answers short trials to survive each floor and descend toward the Ground Floor.
 
 The main design promise is:
 
@@ -16,19 +157,16 @@ The prototype must not feel like a school quiz with a horror skin. It must feel 
 
 ## 2. Core Gameplay Loop
 
-The core gameplay loop is:
+See **Section 0** for the authoritative loop. In summary:
 
 ```txt
-Floor starts
-Elevator doors open
-Question or challenge begins
+Floor starts (threat reset to this floor's start distance)
+Trial begins (1 of 5)
 Timer starts
-Creature advances
-Player answers or times out
-Answer is evaluated
-Threat distance changes
-Horror feedback plays
-Next floor starts or player dies
+Player answers or times out -> trial is consumed
+Wrong/timeout move the threat closer; correct does not move it back
+Repeat until all 5 trials survived -> doors close -> descend one floor
+Reach Ground Floor (escape) or threat reaches elevator (caught)
 ```
 
 The loop must be readable, fast and repeatable.
@@ -36,7 +174,7 @@ The loop must be readable, fast and repeatable.
 The player should understand within seconds:
 
 ```txt
-Answer quickly and correctly or she gets closer.
+Survive each floor's trials and descend, or she gets in.
 ```
 
 ---
@@ -120,7 +258,13 @@ The creature position should be driven by `ThreatManager`.
 
 ## 6. Answer Outcome Rules
 
-Prototype answer effects:
+> **Superseded by Section 0.6 (Phase 7B.4).** Correct answers no longer add distance —
+> the threat is non-receding during a floor. The values below are kept only as history of
+> the original receding-threat model. The `ThreatManager` constants still exist (and
+> `ApplyCorrectFast/Normal/Slow` are still defined and unit-tested), but the descent flow
+> uses `RecordCorrectSealed` (no distance change) for correct answers.
+
+Original (historical) answer effects:
 
 ```txt
 Correct fast: +18 distance, stress -1
@@ -131,7 +275,7 @@ Timeout: -30 distance, stress +2
 Death: distance <= 0
 ```
 
-These values are initial balancing values. They can be adjusted after playtesting.
+Current active rules: see Section 0.6.
 
 ---
 
@@ -296,6 +440,11 @@ Timeout should be more dangerous than answering wrong.
 
 ## 11. Correct Answer Design
 
+> **Superseded by Section 0.5 / 0.6 (Phase 7B.4).** In the current design a correct answer
+> consumes the trial and lets the player continue, but does NOT push the creature back and
+> does not change stress. Relief comes from surviving the floor and descending, not from
+> regained distance. The combo/relief wording below is historical.
+
 ## 11.1 Correct fast
 
 A fast correct answer should create relief.
@@ -383,18 +532,17 @@ She reached the elevator because I was too slow or answered wrong.
 
 ---
 
-## 13. Victory Design
+## 13. Victory Design (escape)
 
-Victory occurs when the player completes the last floor of the prototype.
+Victory occurs when the player survives all 5 trials of Floor 1 and the elevator reaches the Ground Floor.
 
 Victory sequence:
 
 ```txt
-Final answer resolved
-Creature fails to reach elevator
+Final trial of Floor 1 survived
 Doors close
-Elevator display stabilizes
-Result screen appears
+Elevator descends to the Ground Floor
+Result screen appears: GROUND FLOOR — YOU ESCAPED
 Run marked as survived
 Restart is available
 ```
@@ -599,25 +747,22 @@ Do not require the player to memorize complex layouts.
 
 ## 22. Prototype Floor Structure
 
-Preferred v0.1 structure:
+> **Updated for Phase 7B.4.** Each floor now has **5 trials** (not one question), and the
+> player **descends** from Floor 5 to the Ground Floor. The themes below describe the
+> challenge flavour grouped per floor; the floors are authored Floor 1..5 by theme but
+> displayed in descending order (5 first).
+
+Current v0.1 structure (per displayed floor, descent order, 5 trials each):
 
 ```txt
-Floor 1: Observation
-Floor 2: Short memory
+Floor 5 (descent start): Observation
+Floor 4: Short memory
 Floor 3: Environmental instruction
-Floor 4: Audio or simple logic
-Floor 5: Sang-froid or anomaly
+Floor 2: Audio / codes / logic
+Floor 1 (last before escape): Sang-froid / panic
 ```
 
-Fallback minimum version:
-
-```txt
-Floor 1: Observation
-Floor 2: Short memory
-Floor 3: Wrong-answer pressure test
-```
-
-The fallback is acceptable if it proves the loop.
+The 25 prototype trials are code-authored (`PrototypeFloorSet`), English-only for now.
 
 ---
 
@@ -723,6 +868,20 @@ Attack: death sequence
 
 ## 25. Creature Feedback by Answer
 
+> **Superseded by Section 0.5 / 0.6 (Phase 7B.4).** Correct answers no longer make the
+> creature recede. The "recede" entries below are historical. In the current design the
+> creature holds position on a correct answer and only advances on wrong/timeout.
+
+Correct (fast / normal / slow), current behaviour:
+
+```txt
+Creature holds position (does not recede)
+Trial is consumed; player continues
+Relief comes from surviving and descending
+```
+
+Historical (receding-threat) feedback, kept for reference:
+
 Correct fast:
 
 ```txt
@@ -793,6 +952,12 @@ Do not increase difficulty by:
 ---
 
 ## 27. Scoring
+
+> **Note (Phase 7B.4).** There is **no score-based floor clear** and **no Door Seal**
+> mechanic in the active design — a floor is cleared by surviving its 5 trials. The
+> Door Seal scoring experiment (Phase 7B.3) was intentionally removed (see
+> `Docs/DECISIONS.md`). A result-screen score remains optional for a future phase and
+> must never gate floor clearing or loss.
 
 Scoring is optional for the earliest prototype, but recommended for result screen.
 

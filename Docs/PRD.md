@@ -3,17 +3,17 @@
 ## 1. Product Summary
 
 **Project name:** Don’t Let Her In  
-**Genre:** Mobile first-person horror survival quiz  
+**Genre:** Mobile portrait horror elevator trial game  
 **Engine:** Unity 6  
 **Rendering:** URP  
 **Language:** C#  
 **Initial platform:** iOS mobile portrait  
 **Future platforms:** Android, then possible VR/XR  
-**Current milestone:** Prototype v0.1 — First Fear Loop
+**Current milestone:** Prototype v0.1 — First Fear Loop (descent)
 
-Don’t Let Her In is a mobile horror prototype where the player is trapped inside an elevator. At each floor, the elevator doors open onto a creepy corridor. A female entity stands far away and approaches while the player answers short survival questions.
+Don’t Let Her In is a mobile horror prototype where the player wakes up high inside a sinister building, trapped in an elevator with the doors open. At each floor, a hallway threat (a female entity) approaches. The core objective is to **descend floor by floor and reach the Ground Floor to escape**.
 
-The player must answer quickly and correctly to push the creature away. Slow answers barely help. Wrong answers and timeouts bring her closer. If she reaches the elevator, the player loses.
+Each floor holds **5 trials** (short survival challenges). The threat **never recedes during a floor**: a correct answer consumes the trial and lets the player continue, but does not push the threat back; a wrong answer or a timeout consumes the trial and moves the threat closer (timeout strongest). Surviving all 5 trials of a floor closes the doors and descends to the next floor down. If the threat reaches the elevator, the player loses (**SHE GOT IN**). Surviving Floor 1 reaches the **Ground Floor — YOU ESCAPED**.
 
 Main promise:
 
@@ -25,23 +25,35 @@ Main promise:
 
 The goal of the first prototype is not to build the full game.
 
-The goal is to prove that the core loop creates tension:
+The goal is to prove that the core descent loop creates tension:
 
 ```txt
-Question starts
+Floor starts (threat reset to this floor's start distance)
+Trial starts (1 of 5)
 Timer starts
-Creature advances
 Player answers
-Answer is evaluated
-Threat distance changes
-Next floor or death
+Answer is evaluated (correct / wrong / timeout)
+Trial is consumed; wrong/timeout move the threat closer (threat never recedes)
+Repeat until all 5 trials survived -> doors close -> descend one floor
+Reach Ground Floor -> escape, or threat reaches elevator -> caught
 ```
 
 The prototype must answer one key question:
 
-> Is it stressful and fun to answer short questions while seeing a creature approach the elevator?
+> Is it stressful and fun to answer short trials while seeing a creature approach the elevator during a descent?
 
-If the answer is yes, the project can move toward better art, stronger sound design, more levels and a polished mobile demo.
+If the answer is yes, the project can move toward better art, stronger sound design, more floors and a polished mobile demo.
+
+### Objective and structure
+
+```txt
+Core objective: reach the Ground Floor and escape.
+Prototype v0.1 starts at Floor 5 and descends: 5 -> 4 -> 3 -> 2 -> 1 -> Ground Floor.
+Each floor has 5 trials (25 trials total in the prototype).
+A floor is cleared by surviving all 5 trials (no score requirement).
+Full game target may start higher later, such as Floor 15.
+English is the default language; French is planned from the beginning.
+```
 
 ---
 
@@ -134,47 +146,41 @@ A UI timer can exist, but the visual pressure should come from her movement thro
 
 ## 6.3 Clear consequences
 
-Every answer must have a clear consequence.
+Every trial must have a clear consequence. The threat never recedes during a floor (Phase 7B.4); progress comes from surviving trials, not from pushing the creature back.
 
-Fast correct answer:
-
-```txt
-Creature moves away
-Stress decreases slightly
-Player feels temporary relief
-```
-
-Slow correct answer:
+Correct answer (fast, normal or slow):
 
 ```txt
-Creature barely moves away
-Pressure remains
+Trial is consumed
+Player continues to the next trial
+Threat does NOT move back
+Relief comes from surviving, not from gaining distance
 ```
 
 Wrong answer:
 
 ```txt
+Trial is consumed
 UI glitches
-Lights cut out
-Creature jumps closer
+Creature moves closer
 Stress increases
 ```
 
 Timeout:
 
 ```txt
-Question disappears
+Trial is consumed
 Lights fail
-Creature advances strongly
+Creature advances strongly (worse than a wrong answer)
 Stress increases more
 ```
 
-Death:
+Caught (loss):
 
 ```txt
+Threat distance reaches 0
 Creature reaches elevator
-Attack or jumpscare triggers
-Run ends
+Run ends -> SHE GOT IN
 Result screen appears
 ```
 
@@ -223,22 +229,22 @@ The prototype must include:
 
 The prototype must not include:
 
-- VR
-- ads
-- shop
-- monetization
+- final-quality art
+- real/final audio mix
+- jumpscare cinematics
+- pathfinding / advanced enemy AI
+- monetization (ads, shop, IAP)
+- online / cloud (account, cloud save, leaderboard)
+- VR/XR
+- the full campaign (target may start at Floor 15 later; prototype uses 5 floors)
+- full question-content localization (UI/status/intro are EN/FR; questions remain English-only for now)
 - multiple monsters
 - complex story
 - procedural generation
-- account system
-- cloud save
-- online leaderboard
-- final-quality graphics
-- advanced AI enemy behavior
 - inventory
 - free movement
 - joystick controls
-- full cinematic sequences
+- a score-based or Door Seal floor-clear mechanic (removed in Phase 7B.4)
 
 ---
 
@@ -248,40 +254,37 @@ The prototype must not include:
 
 ```txt
 Player opens game
-Start screen appears
-Player taps Start
-Elevator scene starts
-Doors open
-Question appears
-Creature starts approaching
-Player answers
-Threat distance updates
-Next floor starts
-Player survives or dies
+Narrative intro screen appears (wake up on Floor 5, BEGIN DESCENT)
+Player taps Begin Descent
+Elevator scene starts on Floor 5
+Trial 1 of 5 appears, timer starts, creature is at this floor's start distance
+Player answers (correct / wrong / timeout); the trial is consumed
+Wrong/timeout move the threat closer; correct does not move it back
+Repeat trials 2..5
+Survive all 5 trials -> DOORS CLOSING -> DESCENDING -> next floor down
+Reach Ground Floor or get caught
 Result screen appears
 Player can restart
 ```
 
-## 8.2 Run win flow
+## 8.2 Run win flow (escape)
 
 ```txt
-Player completes final prototype floor
-Creature fails to reach elevator
+Player survives all 5 trials of Floor 1
 Elevator doors close
-Result screen appears
+Elevator reaches the Ground Floor
+Result screen appears: GROUND FLOOR — YOU ESCAPED
 Run marked as survived
 Restart button appears
 ```
 
-## 8.3 Run loss flow
+## 8.3 Run loss flow (caught)
 
 ```txt
-Creature distance reaches 0
-Current question is cancelled
-Lights fail
-Creature reaches elevator
-Attack feedback plays
-Result screen appears
+Threat distance reaches 0 (after a wrong answer or timeout)
+Current trial is cancelled
+Creature reaches the elevator
+Result screen appears: SHE GOT IN
 Run marked as lost
 Restart button appears
 ```
@@ -311,18 +314,28 @@ Distance interpretation:
 0: death
 ```
 
-## 9.2 Answer outcomes
+## 9.2 Trial outcomes (Phase 7B.4 — non-receding threat)
 
-Prototype answer effects:
+Each trial result consumes the trial. The threat never recedes during a floor, so correct answers do not change the distance. Confirmed prototype values (`ThreatManager`):
 
 ```txt
-Correct fast: +18 distance, stress -1
-Correct normal: +10 distance
-Correct slow: +3 distance
+Correct (fast / normal / slow): trial consumed, no distance change, no stress change
 Wrong answer: -20 distance, stress +1
 Timeout: -30 distance, stress +2
-Death: distance <= 0
+Caught: distance <= 0 -> SHE GOT IN
 ```
+
+At the start of each floor the threat is reset to that floor's starting distance (deeper = closer):
+
+```txt
+Floor 5 start distance: 85
+Floor 4 start distance: 80
+Floor 3 start distance: 75
+Floor 2 start distance: 70
+Floor 1 start distance: 65
+```
+
+Note: the older "+distance for correct answers" model (and the Door Seal scoring experiment) is no longer the active design. See `Docs/GAME_DESIGN.md` and `Docs/DECISIONS.md`.
 
 ## 9.3 Stress
 
@@ -432,41 +445,32 @@ This type can be simplified for v0.1 if implementation is too costly.
 
 ## 11.1 Prototype target
 
-The prototype should contain 3 to 5 floors.
+The prototype contains 5 floors, descended from the top: Floor 5 -> 4 -> 3 -> 2 -> 1 -> Ground Floor. Each floor has 5 trials (25 trials total).
 
-Recommended final v0.1 structure:
-
-```txt
-Floor 1: simple observation
-Floor 2: short memory
-Floor 3: environmental message
-Floor 4: audio or logic
-Floor 5: panic / sang-froid challenge
-```
-
-If 5 floors are too much for the first playable build, start with 3 floors.
-
-Minimum acceptable playable prototype:
+Current v0.1 structure (each floor groups one challenge theme across its 5 trials):
 
 ```txt
-3 floors
-5 questions
-one creature
-death
-victory
-restart
+Floor 5 (descent start): observation
+Floor 4: short memory
+Floor 3: environmental instruction
+Floor 2: audio / codes / logic
+Floor 1 (last before escape): panic / sang-froid
 ```
 
-Preferred prototype:
+Note: internally the floors are authored Floor 1..5 by theme, but the player descends from the highest displayed floor (5) down to Floor 1, then reaches the Ground Floor.
+
+Playable prototype:
 
 ```txt
 5 floors
-10 questions
+25 trials (5 per floor)
 one creature
-death
-victory
+descent to the Ground Floor (escape)
+loss when the threat reaches the elevator (caught)
 restart
 basic horror feedback
+narrative intro
+EN/FR localization prep for UI/status/intro
 ```
 
 ---

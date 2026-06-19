@@ -23,11 +23,11 @@ Prototype v0.1 — First Fear Loop
 Current status:
 
 ```txt
-Documentation setup in progress
-Unity project not yet implemented
-No gameplay code yet
-No playable build yet
-No playtest performed yet
+Playable descent loop committed (Phase 7B.4): Floor 5 -> Ground Floor, 5 trials per floor.
+148/148 EditMode tests passing.
+Door Seal / score-based floor clear removed from active gameplay.
+Narrative intro + EN/FR UI/status/intro localization present (question content still EN).
+No structured human playtest recorded yet — use the checklist below for the next session.
 ```
 
 ---
@@ -104,6 +104,34 @@ Did the tester want to replay?
 
 -
 ```
+
+---
+
+## 3B. Phase 7B.4 / 7C Descent Loop Checklist
+
+Use this checklist for the next playtest of the descent loop. Items are unchecked — no
+human playtest results are recorded yet.
+
+```txt
+[ ] Intro screen is readable in portrait (title + wake-up/descent context fit, not cut off)
+[ ] BEGIN DESCENT button is clear and starts the run
+[ ] Run starts on Floor 5 (HUD shows the top floor first)
+[ ] Descent Floor 5 -> Floor 4 is clear (FLOOR CLEARED -> DOORS CLOSING -> DESCENDING reads as going down)
+[ ] No Door Seal / score gate is shown anywhere (floors clear by surviving 5 trials)
+[ ] The 5-trials-per-floor rhythm is readable (TRIAL 1/5 .. 5/5)
+[ ] Threat feels non-receding within a floor (correct answers do not push her back)
+[ ] Wrong answer adds pressure (she moves closer; feedback is visible)
+[ ] Timeout feels worse than a wrong answer (she moves closer more strongly)
+[ ] Floor clear timing feels right (short transition, not too long/short)
+[ ] Reaching Floor 1 -> Ground Floor escape is clear (GROUND FLOOR — YOU ESCAPED)
+[ ] Getting caught is clear (SHE GOT IN) and restart works
+[ ] French UI smoke check: switch language to French, intro/status/transition/result read correctly
+    (ÉTAGE / ÉPREUVE / DESCENTE / REZ-DE-CHAUSSÉE / ELLE EST ENTRÉE / TU ES SORTI)
+[ ] No blocking Console errors during a full run (start -> descend -> escape or caught -> restart)
+```
+
+Note: question / answer / cue text is still English-only even when the UI is set to French
+(expected until Phase 7E).
 
 ---
 

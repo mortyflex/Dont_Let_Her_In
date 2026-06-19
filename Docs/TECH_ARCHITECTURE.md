@@ -14,17 +14,87 @@ The prototype is a mobile-first horror game with a fixed first-person camera ins
 
 The technical goal is to create a small, modular, testable Unity project that proves the core gameplay loop before investing in final art, audio, monetization or platform expansion.
 
-Core loop:
+Core loop (descent, Phase 7B.4):
 
 ```txt
-Question starts
+Floor starts (threat reset to this floor's start distance)
+Trial starts (1 of 5)
 Timer starts
-Creature advances
-Player answers
-Answer is evaluated
-Threat distance changes
-Next floor or death
+Player answers -> trial consumed
+Wrong/timeout move the threat closer; correct does not move it back
+Survive all 5 trials -> doors close -> descend; reach Ground Floor or get caught
 ```
+
+---
+
+## 1B. Current Implemented Systems (Phase 7B.4)
+
+> Sections 7+ below describe the original recommended architecture (GameManager,
+> FloorDirector, ScriptableObject data assets, etc.). The prototype as committed in
+> Phase 7B.4 uses a leaner, code-authored set of systems. This section is the
+> authoritative map of what actually exists and is tested.
+
+Implemented systems (all under `UnityProject/Assets/Scripts/`):
+
+```txt
+GameLoop/PlayableRunFlowController.cs  - MonoBehaviour orchestrator: wires the pure
+                                         systems to the UI and the creature, runs the
+                                         descent flow (begin floor, run trials, transitions,
+                                         result). Owns no game rules itself.
+GameLoop/RunController.cs              - Pure run state: floor progression, answer stats,
+                                         win/loss. RecordCorrectSealed() = correct answer
+                                         with NO threat movement. ResetThreatForFloor()
+                                         resets the threat per floor.
+GameLoop/RunTrialProgress.cs           - Pure per-floor trial cursor (current floor/trial,
+                                         final-trial / final-floor checks).
+GameLoop/TrialFlowResolver.cs          - Pure rule: maps (isDead, isFinalTrial, isFinalFloor)
+                                         to Lost / NextTrialSameFloor / FloorCleared / Escaped.
+GameLoop/DescentFloorProfile.cs        - Pure descent tuning: displayed floor number counts
+                                         down; per-floor start distance (Floor 5=85 .. Floor 1=65).
+GameLoop/AnswerOutcome.cs +            - Classify an AnswerResult into
+  AnswerOutcomeResolver.cs               CorrectFast/Normal/Slow / Wrong / Timeout.
+GameLoop/InterQuestionPacing.cs        - Pure pacing helper (hold seconds per outcome).
+GameLoop/PrototypeLocalization.cs      - Central EN/FR string registry + current language.
+GameLoop/LocalizedText.cs              - Small (english, french) pair with Get(language).
+GameLoop/GameLanguage.cs               - enum { English, French }.
+GameLoop/ThreatProximityFeedback.cs    - Pure near-death overlay alpha + warning messages.
+Threat/ThreatManager.cs                - Distance/stress rules, clamps, death, ResetTo().
+Threat/ThreatState.cs                  - Immutable threat snapshot.
+Questions/QuestionManager.cs           - Question/timer flow, answer speed, AnswerResult.
+Questions/QuestionData.cs, QuestionCue.cs, FloorDefinition.cs, FloorTrial.cs - data containers.
+Questions/PrototypeFloorSet.cs         - Code-authored content: 5 floors x 5 trials (25 total),
+                                         English-only. TrialCounts() drives RunTrialProgress.
+Creature/CreatureController.cs +       - Distance-driven creature visual phase
+  CreatureDistanceMapper.cs              (Far..Attack). No AI.
+UI/GameplayUIController.cs             - Code-built mobile-portrait HUD: intro, trial,
+                                         cue, timer, floor transition, result. Reads
+                                         localized strings; owns no game rules.
+```
+
+Localization approach (Phase 7B.4):
+
+```txt
+Lightweight code-based localization (PrototypeLocalization + LocalizedText + GameLanguage).
+English is the default; French available for UI / status / intro / transition / result.
+Language is switchable from code/tests; there is no settings UI yet.
+No Unity Localization package and no localization asset pipeline.
+Question / answer / cue content remains English-only for now.
+```
+
+Removed / obsolete (do not document as current):
+
+```txt
+DoorSealScoring / DoorSealScore   - Door Seal scoring experiment, removed in Phase 7B.4.
+FloorThreatProfile                - replaced by DescentFloorProfile (per-floor start distance).
+FloorTransitionText               - transition strings now live in PrototypeLocalization.
+Score-based floor clear           - floors are cleared by surviving 5 trials, not by score.
+```
+
+Note: the original `GameManager` / `FloorDirector` / `ElevatorController` / `AudioDirector`
+and the ScriptableObject data assets (`FloorData`, `CreatureData`, etc.) described in the
+sections below are NOT all implemented yet. `PlayableRunFlowController` plays the role of the
+high-level orchestrator, and prototype content is code-authored rather than stored in
+ScriptableObject assets. The architecture stays compatible with adding them later.
 
 ---
 
