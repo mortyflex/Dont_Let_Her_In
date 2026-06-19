@@ -185,25 +185,37 @@ namespace DontLetHerIn.GameLoop
                 ui.SetAnswersInteractable(false);
             }
 
-            if (_run.HasLost)
-            {
-                ShowResult(won: false);
-                return;
-            }
-
-            _run.CompleteFloor(); // one question per floor in the prototype
-            if (_run.HasWon)
-            {
-                ShowResult(won: true);
-                return;
-            }
-
-            // Non-final floor cleared: this is survival, not escape. Let the answer outcome
-            // register (Phase 7 pacing), then play the inter-floor transition before the
-            // next floor begins. After CompleteFloor (and not won), CurrentFloor is the
-            // floor the elevator is climbing to.
+            // Only a correct answer clears the current floor (Phase 7B.1). Wrong/timeout
+            // are danger, not progress: if they did not kill, the same floor stays active.
+            bool isFinalFloor = _run.CurrentFloor >= _run.TotalFloors;
+            FloorResolution resolution = FloorClearResolver.Resolve(outcome, _run.HasLost, isFinalFloor);
             float hold = InterQuestionPacing.GetHoldSeconds(outcome, statusHoldSeconds, dangerHoldExtraSeconds);
-            _advanceRoutine = StartCoroutine(ClearFloorThenAdvance(hold, _run.CurrentFloor));
+
+            switch (resolution)
+            {
+                case FloorResolution.Lost:
+                    ShowResult(won: false);
+                    return;
+
+                case FloorResolution.Escaped:
+                    _run.CompleteFloor(); // final floor cleared -> marks the run won
+                    ShowResult(won: true);
+                    return;
+
+                case FloorResolution.FloorCleared:
+                    // Non-final floor cleared: survival, not escape. Hold on the outcome
+                    // (Phase 7 pacing), then play the inter-floor transition. After
+                    // CompleteFloor, CurrentFloor is the floor the elevator climbs to.
+                    _run.CompleteFloor();
+                    _advanceRoutine = StartCoroutine(ClearFloorThenAdvance(hold, _run.CurrentFloor));
+                    return;
+
+                case FloorResolution.RetrySameFloor:
+                    // Wrong/timeout but still alive: no CompleteFloor, no transition.
+                    // Re-arm the same floor's question after the danger hold.
+                    _advanceRoutine = StartCoroutine(RetrySameFloorAfterDelay(hold));
+                    return;
+            }
         }
 
         private void ApplyOutcome(AnswerOutcome outcome)
@@ -215,6 +227,21 @@ namespace DontLetHerIn.GameLoop
                 case AnswerOutcome.CorrectSlow: _run.RecordCorrectSlow(); break;
                 case AnswerOutcome.Wrong: _run.RecordWrongAnswer(); break;
                 case AnswerOutcome.Timeout: _run.RecordTimeout(); break;
+            }
+        }
+
+        /// <summary>
+        /// Wrong answer or timeout that did not kill the player: the floor was not cleared,
+        /// so after the danger feedback hold we re-arm the SAME floor's question (cue and
+        /// timer reset). The floor index is unchanged, so no transition is shown.
+        /// </summary>
+        private IEnumerator RetrySameFloorAfterDelay(float holdSeconds)
+        {
+            yield return new WaitForSeconds(holdSeconds);
+            _advanceRoutine = null;
+            if (_run.IsRunning)
+            {
+                StartCurrentQuestion();
             }
         }
 
