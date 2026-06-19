@@ -41,14 +41,10 @@ namespace DontLetHerIn.GameLoop
         [Tooltip("Seconds the ASCENDING message holds before the next floor starts.")]
         [SerializeField] private float ascendingHoldSeconds = 0.8f;
 
-        private const string LossReasonCaught = "She reached the elevator.";
-        private const string LossReasonSeal = "The doors would not close.";
-
         private RunController _run;
         private QuestionManager _questions;
         private IReadOnlyList<FloorDefinition> _floors;
         private RunTrialProgress _progress;
-        private readonly DoorSealScore _doorSeal = new DoorSealScore();
         private Coroutine _advanceRoutine;
         private bool _eventsBound;
 
@@ -155,23 +151,21 @@ namespace DontLetHerIn.GameLoop
             _run.StartRun();
             _progress.Reset();
             if (ui != null) ui.ShowGameplay();
-            BeginFloor(); // floor 1 threat + Door Seal reset, creature + HUD refresh
+            BeginFloor(); // top floor threat reset, creature + HUD refresh
             StartCurrentTrial();
         }
 
         /// <summary>
-        /// Start a floor as a fresh danger cycle (Phase 7B.3): reset the threat to this
-        /// floor's configured starting distance (stress cleared) and reset the Door Seal to
-        /// this floor's required threshold, then refresh the creature and HUD.
+        /// Start a floor as a fresh danger cycle (Phase 7B.4 descent): reset the threat to
+        /// this floor's configured starting distance (stress cleared), then refresh the
+        /// creature and HUD. The deeper the descent, the lower the starting distance.
         /// </summary>
         private void BeginFloor()
         {
-            int floor = _progress.CurrentFloorNumber;
-            _run.ResetThreatForFloor(FloorThreatProfile.StartDistance(floor));
-            _doorSeal.StartFloor(FloorThreatProfile.DoorSealThreshold(floor));
+            int displayFloor = DescentFloorProfile.DisplayFloorNumber(_progress.CurrentFloorIndex, _progress.FloorCount);
+            _run.ResetThreatForFloor(DescentFloorProfile.StartDistance(displayFloor));
             UpdateCreature();
             RefreshThreatHud();
-            RefreshDoorSealHud();
         }
 
         private void StartCurrentTrial()
@@ -182,8 +176,8 @@ namespace DontLetHerIn.GameLoop
             QuestionData question = trial.Question;
             if (ui != null)
             {
-                ui.UpdateProgress(_progress.CurrentFloorNumber, _progress.FloorCount,
-                    _progress.CurrentTrialNumber, _progress.TrialsInCurrentFloor);
+                int displayFloor = DescentFloorProfile.DisplayFloorNumber(_progress.CurrentFloorIndex, _progress.FloorCount);
+                ui.UpdateProgress(displayFloor, _progress.CurrentTrialNumber, _progress.TrialsInCurrentFloor);
                 ui.ShowQuestion(question);
                 ShowCue(trial.Cue);
                 ui.SetAnswersInteractable(true);
@@ -209,44 +203,32 @@ namespace DontLetHerIn.GameLoop
         {
             AnswerOutcome outcome = AnswerOutcomeResolver.Resolve(result);
 
-            // Door Seal is scored from the threat proximity BEFORE any penalty is applied.
-            int distanceBefore = _run.Threat.Distance;
-            float sealPoints = DoorSealScoring.Score(outcome, distanceBefore);
-
             ApplyOutcome(outcome); // wrong/timeout advance threat (+ death); correct never recedes
-            _doorSeal.Add(sealPoints);
 
             UpdateCreature();
             RefreshThreatHud();
-            RefreshDoorSealHud();
             if (ui != null)
             {
                 ui.ShowOutcomeStatus(outcome);
                 ui.SetAnswersInteractable(false);
             }
 
-            // Every trial result consumes the current trial (Phase 7B.2). Phase 7B.3: the
-            // floor clears on its last trial only if the Door Seal threshold was reached;
-            // otherwise the doors would not close and the run is lost. Death overrides all.
+            // Every trial result consumes the current trial. Surviving all 5 trials clears
+            // the floor (no score needed); the last floor's clear reaches the ground floor.
+            // Death (distance <= 0) overrides everything.
             TrialResolution resolution = TrialFlowResolver.Resolve(
-                _run.HasLost, _progress.IsFinalTrialInFloor, _progress.IsFinalFloor, _doorSeal.IsSealed);
+                _run.HasLost, _progress.IsFinalTrialInFloor, _progress.IsFinalFloor);
             float hold = InterQuestionPacing.GetHoldSeconds(outcome, statusHoldSeconds, dangerHoldExtraSeconds);
 
             switch (resolution)
             {
                 case TrialResolution.Lost:
-                    ShowResult(won: false, lossReason: LossReasonCaught);
-                    return;
-
-                case TrialResolution.SealFailed:
-                    // Survived the floor's trials but the doors would not close.
-                    _run.FailRun();
-                    ShowResult(won: false, lossReason: LossReasonSeal);
+                    ShowResult(won: false);
                     return;
 
                 case TrialResolution.Escaped:
-                    _run.CompleteFloor(); // final floor sealed -> marks the run won
-                    ShowResult(won: true, lossReason: null);
+                    _run.CompleteFloor(); // final floor (Floor 1) cleared -> reach ground floor
+                    ShowResult(won: true);
                     return;
 
                 case TrialResolution.NextTrialSameFloor:
@@ -257,8 +239,8 @@ namespace DontLetHerIn.GameLoop
                     return;
 
                 case TrialResolution.FloorCleared:
-                    // Last trial of a non-final floor sealed: advance both the run (floor
-                    // stats) and the trial progress, then play the transition.
+                    // Survived all trials of a non-final floor: advance both the run (floor
+                    // stats) and the trial progress, then play the descent transition.
                     _run.CompleteFloor();
                     _progress.AdvanceFloor();
                     _advanceRoutine = StartCoroutine(ClearFloorThenAdvance(hold));
@@ -270,8 +252,8 @@ namespace DontLetHerIn.GameLoop
         {
             switch (outcome)
             {
-                // Correct answers build Door Seal but never push the creature back during a
-                // floor (Phase 7B.3 non-receding threat).
+                // Correct answers never push the creature back during a floor (non-receding
+                // threat); they only consume the trial.
                 case AnswerOutcome.CorrectFast:
                 case AnswerOutcome.CorrectNormal:
                 case AnswerOutcome.CorrectSlow:
@@ -300,9 +282,9 @@ namespace DontLetHerIn.GameLoop
         /// <summary>
         /// After a non-final floor is fully cleared: hold on the answer outcome (Phase 7
         /// pacing), then play a short UI-only elevator transition (FLOOR CLEARED -> DOORS
-        /// CLOSING -> ASCENDING) framing temporary safety, then start the next floor's first
-        /// trial. Progress already points at the next floor. Danger is paused during the
-        /// transition: no threat/creature change is applied here.
+        /// CLOSING -> DESCENDING) framing the descent, then start the next lower floor's
+        /// first trial. Progress already points at the next floor. Danger is paused during
+        /// the transition: no threat/creature change is applied here.
         /// </summary>
         private IEnumerator ClearFloorThenAdvance(float outcomeHold)
         {
@@ -312,27 +294,27 @@ namespace DontLetHerIn.GameLoop
             if (ui != null)
             {
                 ui.BeginFloorTransition();
-                ui.ShowFloorTransition(FloorTransitionText.ClearedTitle, FloorTransitionText.GetClearedSubtitle());
+                ui.ShowFloorTransition(PrototypeLocalization.Current(PrototypeLocalization.FloorCleared), string.Empty);
             }
             yield return new WaitForSeconds(floorClearedHoldSeconds);
 
             if (ui != null)
             {
-                ui.ShowFloorTransition(FloorTransitionText.DoorsClosingTitle, FloorTransitionText.GetDoorsClosingSubtitle());
+                ui.ShowFloorTransition(PrototypeLocalization.Current(PrototypeLocalization.DoorsClosing), string.Empty);
             }
             yield return new WaitForSeconds(doorsClosingHoldSeconds);
 
-            // New floor = fresh danger cycle: reset threat to this floor's start distance and
-            // Door Seal to its threshold (creature + HUD refresh). Done during the ascent.
+            // New floor = fresh danger cycle: reset threat to this lower floor's start
+            // distance (creature + HUD refresh). Done during the descent.
             BeginFloor();
 
             if (ui != null)
             {
-                // Reveal the floor we are climbing to (and its first trial) during the ascent.
-                ui.UpdateProgress(_progress.CurrentFloorNumber, _progress.FloorCount,
-                    _progress.CurrentTrialNumber, _progress.TrialsInCurrentFloor);
-                ui.ShowFloorTransition(FloorTransitionText.AscendingTitle,
-                    FloorTransitionText.GetAscendingSubtitle(_progress.CurrentFloorNumber, _progress.FloorCount));
+                // Reveal the floor we are descending to (and its first trial).
+                int displayFloor = DescentFloorProfile.DisplayFloorNumber(_progress.CurrentFloorIndex, _progress.FloorCount);
+                ui.UpdateProgress(displayFloor, _progress.CurrentTrialNumber, _progress.TrialsInCurrentFloor);
+                ui.ShowFloorTransition(PrototypeLocalization.Current(PrototypeLocalization.Descending),
+                    PrototypeLocalization.FloorLabel(displayFloor));
             }
             yield return new WaitForSeconds(ascendingHoldSeconds);
 
@@ -388,13 +370,7 @@ namespace DontLetHerIn.GameLoop
             ui.UpdateProximity(distance);
         }
 
-        private void RefreshDoorSealHud()
-        {
-            if (ui == null) return;
-            ui.UpdateDoorSeal(_doorSeal.CurrentRounded, _doorSeal.Required);
-        }
-
-        private void ShowResult(bool won, string lossReason)
+        private void ShowResult(bool won)
         {
             StopAdvanceRoutine();
             if (ui == null) return;
@@ -403,8 +379,8 @@ namespace DontLetHerIn.GameLoop
             string detail =
                 $"Floors cleared: {result.FloorsCompleted}/{_run.TotalFloors}\n" +
                 $"Correct: {result.CorrectAnswers}   Wrong: {result.WrongAnswers}   Timeouts: {result.Timeouts}\n" +
-                $"Door Seal: {_doorSeal.CurrentRounded}/{_doorSeal.Required}   Distance: {result.FinalDistance}";
-            ui.ShowResult(won, detail, lossReason);
+                $"Distance: {result.FinalDistance}";
+            ui.ShowResult(won, detail);
         }
     }
 }

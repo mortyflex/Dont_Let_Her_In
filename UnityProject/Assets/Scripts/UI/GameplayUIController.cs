@@ -65,7 +65,6 @@ namespace DontLetHerIn.UI
 
         private Text _floorText;
         private Text _threatText;
-        private Text _doorSealText;
         private RectTransform _timerFill;
         private Image _timerFillImage;
         private Text _timerText;
@@ -80,6 +79,11 @@ namespace DontLetHerIn.UI
         private GameObject _floorTransitionPanel;
         private Text _floorTransitionTitle;
         private Text _floorTransitionSubtitle;
+
+        private Text _startTitleText;
+        private Text _introBodyText;
+        private Text _startButtonLabel;
+        private Text _restartButtonLabel;
         private Text _resultText;
         private Text _resultSubtitleText;
 
@@ -126,6 +130,11 @@ namespace DontLetHerIn.UI
 
         public void ShowStartPanel()
         {
+            // Pull localized intro text at show-time so a code/test language switch reflects.
+            if (_startTitleText != null) _startTitleText.text = PrototypeLocalization.Current(PrototypeLocalization.Title);
+            if (_introBodyText != null) _introBodyText.text = PrototypeLocalization.Current(PrototypeLocalization.Intro);
+            if (_startButtonLabel != null) _startButtonLabel.text = PrototypeLocalization.Current(PrototypeLocalization.BeginDescent);
+
             _startPanel.SetActive(true);
             _gameplayRoot.SetActive(false);
             _resultPanel.SetActive(false);
@@ -153,11 +162,12 @@ namespace DontLetHerIn.UI
             if (_proximityText != null) _proximityText.text = string.Empty;
         }
 
-        public void ShowResult(bool won, string detail, string lossSubtitle = null)
+        public void ShowResult(bool won, string detail)
         {
             _gameplayRoot.SetActive(true); // keep HUD visible behind the result overlay
             HideFloorTransition();
             _resultPanel.SetActive(true);
+            if (_restartButtonLabel != null) _restartButtonLabel.text = PrototypeLocalization.Current(PrototypeLocalization.Restart);
 
             // Dark/red overlay on loss, neutral dark on win.
             if (_resultPanelImage != null)
@@ -165,14 +175,18 @@ namespace DontLetHerIn.UI
                 _resultPanelImage.color = won ? DimColor : LossPanelColor;
             }
 
-            _resultText.text = won ? "YOU ESCAPED" : "SHE GOT IN";
+            // On win the player reaches the ground floor; on loss the creature got in.
+            _resultText.text = won
+                ? PrototypeLocalization.Current(PrototypeLocalization.GroundFloor) + " — " +
+                  PrototypeLocalization.Current(PrototypeLocalization.YouEscaped)
+                : PrototypeLocalization.Current(PrototypeLocalization.SheGotIn);
             _resultText.color = won ? GoodColor : BadColor;
 
             if (_resultSubtitleText != null)
             {
                 string subtitle = won
-                    ? "The doors finally close."
-                    : (string.IsNullOrEmpty(lossSubtitle) ? "You hesitated too long." : lossSubtitle);
+                    ? PrototypeLocalization.Current(PrototypeLocalization.WinSubtitle)
+                    : PrototypeLocalization.Current(PrototypeLocalization.LossSubtitleCaught);
                 _resultSubtitleText.text = subtitle + "\n\n" + detail;
                 _resultSubtitleText.color = TextColor;
             }
@@ -313,21 +327,13 @@ namespace DontLetHerIn.UI
         /// Show floor and trial progression together (Phase 7B.2). The player is climbing
         /// floors and surviving trials, so the HUD reads e.g. "FLOOR 1 / 5 — TRIAL 1 / 2".
         /// </summary>
-        public void UpdateProgress(int floor, int totalFloors, int trial, int totalTrials)
-        {
-            _floorText.text = $"FLOOR {floor} / {totalFloors}   —   TRIAL {trial} / {totalTrials}";
-        }
-
         /// <summary>
-        /// Show the Door Seal progress for the current floor (Phase 7B.3): correct answers
-        /// raise it, wrong/timeout do not, and the doors close only when it reaches the
-        /// required threshold. Turns green once the threshold is met.
+        /// Show descent floor + trial progress (Phase 7B.4), localized, e.g.
+        /// "FLOOR 5   —   TRIAL 1 / 5". The floor number counts DOWN toward the ground floor.
         /// </summary>
-        public void UpdateDoorSeal(int current, int required)
+        public void UpdateProgress(int floor, int trial, int totalTrials)
         {
-            if (_doorSealText == null) return;
-            _doorSealText.text = $"DOOR SEAL {current} / {required}";
-            _doorSealText.color = current >= required ? GoodColor : WarnColor;
+            _floorText.text = PrototypeLocalization.FloorAndTrial(floor, trial, totalTrials);
         }
 
         public void UpdateThreat(int distance, int stress, CreaturePhase phase)
@@ -377,27 +383,29 @@ namespace DontLetHerIn.UI
         /// </summary>
         public void ShowOutcomeStatus(AnswerOutcome outcome)
         {
+            // Messages are localized (Phase 7B.4); flashes/pulses (Phase 6) are unchanged.
+            string message = PrototypeLocalization.OutcomeMessage(outcome);
             switch (outcome)
             {
                 case AnswerOutcome.CorrectFast:
-                    SetStatus("FAST — DOOR SEAL RISING", GoodColor);
+                    SetStatus(message, GoodColor);
                     Flash(FlashGood, 0.18f, 0.22f);
                     break;
                 case AnswerOutcome.CorrectNormal:
-                    SetStatus("CORRECT — SEAL HOLDING", GoodColor);
+                    SetStatus(message, GoodColor);
                     Flash(FlashGood, 0.10f, 0.18f);
                     break;
                 case AnswerOutcome.CorrectSlow:
-                    SetStatus("TOO SLOW — BARELY SEALED", WarnColor);
+                    SetStatus(message, WarnColor);
                     Flash(WarnColor, 0.10f, 0.18f);
                     break;
                 case AnswerOutcome.Wrong:
-                    SetStatus("WRONG — SHE MOVES", BadColor);
+                    SetStatus(message, BadColor);
                     Flash(FlashBad, 0.30f, 0.30f);
                     Pulse(_statusText != null ? _statusText.rectTransform : null, 1.18f, 0.22f);
                     break;
                 case AnswerOutcome.Timeout:
-                    SetStatus("TOO LATE — SHE HEARD YOU", BadColor);
+                    SetStatus(message, BadColor);
                     // Stronger, darker flash ("brief blackout") for the worst outcome.
                     Flash(FlashDark, 0.55f, 0.40f);
                     Pulse(_statusText != null ? _statusText.rectTransform : null, 1.22f, 0.26f);
@@ -512,15 +520,9 @@ namespace DontLetHerIn.UI
                 new Vector2(0.05f, 0.952f), new Vector2(0.95f, 0.995f));
             _floorText.fontStyle = FontStyle.Bold;
 
-            // Row 2 shares threat (left) and Door Seal (right) so both stay visible.
-            _threatText = CreateText("ThreatText", root, "DIST 85   STRESS 0   FAR", 32,
-                TextAnchor.MiddleLeft, new Vector2(0.04f, 0.902f), new Vector2(0.56f, 0.948f));
+            _threatText = CreateText("ThreatText", root, "DIST 85   STRESS 0   FAR", 40,
+                TextAnchor.MiddleCenter, new Vector2(0.04f, 0.902f), new Vector2(0.96f, 0.948f));
             _threatText.fontStyle = FontStyle.Bold;
-
-            _doorSealText = CreateText("DoorSealText", root, "DOOR SEAL 0 / 180", 32,
-                TextAnchor.MiddleRight, new Vector2(0.56f, 0.902f), new Vector2(0.96f, 0.948f));
-            _doorSealText.fontStyle = FontStyle.Bold;
-            _doorSealText.color = WarnColor;
 
             // Timer bar (background + fill) with the numeric label overlaid inside it.
             RectTransform timerBg = CreatePanel("TimerBar", root, new Color(0.08f, 0.08f, 0.08f, 0.92f),
@@ -585,7 +587,7 @@ namespace DontLetHerIn.UI
             // ---- FLOOR TRANSITION OVERLAY ----
             // Translucent band over the lower question/answer area only, so the corridor
             // and creature stay visible above it. Shown between floors (FLOOR CLEARED /
-            // DOORS CLOSING / ASCENDING); never receives input and starts hidden.
+            // DOORS CLOSING / DESCENDING); never receives input and starts hidden.
             RectTransform transitionPanel = CreatePanel("FloorTransitionPanel", root, DimColor,
                 new Vector2(0.04f, 0.02f), new Vector2(0.96f, 0.46f));
             _floorTransitionPanel = transitionPanel.gameObject;
@@ -605,15 +607,21 @@ namespace DontLetHerIn.UI
                 new Vector2(0f, 0f), new Vector2(1f, 1f)).gameObject;
             var root = (RectTransform)_startPanel.transform;
 
-            CreateText("Title", root, "DON'T LET HER IN", 64, TextAnchor.MiddleCenter,
-                new Vector2(0.05f, 0.62f), new Vector2(0.95f, 0.74f));
-            CreateText("Tagline", root, "Every second of hesitation brings her closer.", 30,
-                TextAnchor.MiddleCenter, new Vector2(0.08f, 0.54f), new Vector2(0.92f, 0.61f));
+            // Narrative intro (Phase 7B.4): title, the wake-up/descent context, then the
+            // BEGIN DESCENT button. All localized text is set in ShowStartPanel.
+            _startTitleText = CreateText("Title", root, string.Empty, 60, TextAnchor.MiddleCenter,
+                new Vector2(0.05f, 0.80f), new Vector2(0.95f, 0.90f));
+            _startTitleText.fontStyle = FontStyle.Bold;
 
-            Button start = CreateButton("StartButton", root, out Text startLabel,
-                new Vector2(0.2f, 0.36f), new Vector2(0.8f, 0.46f));
-            startLabel.text = "START";
-            startLabel.fontSize = 44;
+            _introBodyText = CreateText("IntroBody", root, string.Empty, 34, TextAnchor.UpperCenter,
+                new Vector2(0.08f, 0.30f), new Vector2(0.92f, 0.76f));
+            _introBodyText.color = TextColor;
+
+            Button start = CreateButton("BeginDescentButton", root, out Text startLabel,
+                new Vector2(0.15f, 0.16f), new Vector2(0.85f, 0.26f));
+            _startButtonLabel = startLabel;
+            startLabel.text = string.Empty;
+            startLabel.fontSize = 40;
             start.onClick.AddListener(() => StartClicked?.Invoke());
         }
 
@@ -636,7 +644,8 @@ namespace DontLetHerIn.UI
 
             Button restart = CreateButton("RestartButton", root, out Text restartLabel,
                 new Vector2(0.2f, 0.26f), new Vector2(0.8f, 0.36f));
-            restartLabel.text = "RESTART";
+            _restartButtonLabel = restartLabel;
+            restartLabel.text = string.Empty; // localized in ShowResult
             restartLabel.fontSize = 44;
             restart.onClick.AddListener(() => RestartClicked?.Invoke());
         }
