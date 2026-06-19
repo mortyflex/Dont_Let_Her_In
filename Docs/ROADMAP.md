@@ -935,7 +935,12 @@ Phase 7C   — Documentation alignment: align all docs with the Phase 7B.4 desce
 Phase 7D   — Corridor Observation & Evidence-Based Trials DESIGN (documentation/design only):
              define how future trials become evidence-based corridor observation puzzles
              (observe -> remember -> return -> answer). Added Docs/CORRIDOR_OBSERVATION_DESIGN.md.
-             No camera/visual/gameplay code implemented. (This phase.)
+             No camera/visual/gameplay code implemented.
+Phase 7E   — Evidence Trial Data Model (DATA_MODEL_ONLY): implemented the pure, testable
+             evidence data types (CorridorClue, CorridorClueType, EvidenceAnswerOption,
+             EvidenceTrial, FloorObservationSet), an EvidenceTrialValidator and a 25-trial
+             PrototypeEvidenceFloorSet (EN/FR). Runtime trial flow still uses PrototypeFloorSet;
+             no camera/visual/scene changes. EditMode tests: 179/179 passing. (This phase.)
 ```
 
 Important: Phase 7B.3 (Door Seal) is a **completed experiment that was intentionally
@@ -944,22 +949,23 @@ re-implemented as active gameplay.
 
 ---
 
-## 17C. Recommended Next Phases (after 7D)
+## 17C. Recommended Next Phases (after 7E)
 
-Phase 7D established the corridor-observation / evidence-based-trials direction (design only,
-see `Docs/CORRIDOR_OBSERVATION_DESIGN.md`). The recommended sequence to implement it:
+Phase 7E implemented the evidence-trial data model (data only; see
+`Docs/CORRIDOR_OBSERVATION_DESIGN.md`). The recommended sequence to continue:
 
 ```txt
-Phase 7E — Question Content Localization EN/FR
-           (localize the current 25 prototype questions/answers/cues; reuse PrototypeLocalization)
-Phase 7F — Evidence Trial Data Model
-           (implement CorridorClue, FloorObservationSet, EvidenceTrial as pure data; EditMode-tested)
+Phase 7F — Question Content Localization EN/FR
+           (localize the live 25 questions/answers/cues used by PrototypeFloorSet; reuse
+            PrototypeLocalization. The evidence prototype set is already EN/FR.)
 Phase 7G — Static Corridor Clue Prototype
-           (author one floor's clues, shown statically in the corridor; trials reference clueIds)
+           (show one floor's FloorObservationSet clues statically in the corridor; wire
+            EvidenceTrials to clueIds in the scene)
 Phase 7H — Observation Camera Pass Prototype
            (ObservationPhaseController: slow forward/backward camera travel + handoff to trials)
 Phase 7I — Evidence-Based Floor Playtest
-           (convert Floor 5 to evidence-based trials; playtest observe -> remember -> answer)
+           (drive a floor from PrototypeEvidenceFloorSet end to end; playtest observe ->
+            remember -> answer)
 ```
 
 Later, still planned (not superseded):
@@ -969,9 +975,8 @@ Phase 8 — Mobile Build Readiness (iOS portrait build target, safe area, touch)
 Phase 9 — Visual / Horror Scene Polish (lighting, creature silhouette, audio atmosphere)
 ```
 
-Note: the earlier "Phase 7D — Playtest Polish / Flow Readability" placeholder (proposed in
-Phase 7C) is folded into Phase 7I (evidence-based floor playtest) and ongoing manual checks;
-Phase 7D was reassigned to the corridor-observation design.
+Note: phase numbering shifted from the Phase 7D plan — the evidence data model became 7E
+(done), so question-content localization moved to 7F and the later phases shifted by one.
 
 Do not jump straight to final art or monetization.
 
@@ -989,11 +994,13 @@ Door Seal / score-based floor clear: removed from active gameplay (Phase 7B.4).
 Documentation aligned to the descent loop in Phase 7C.
 Corridor observation / evidence-based trials direction designed in Phase 7D
   (design only; see Docs/CORRIDOR_OBSERVATION_DESIGN.md). No camera/visual code yet.
+Evidence trial data model implemented in Phase 7E (data only; runtime still uses
+  PrototypeFloorSet). EditMode tests: 179/179 passing.
 No iOS build yet.
 ```
 
 Next planned step:
 
 ```txt
-Phase 7E — Question Content Localization EN/FR (recommended)
+Phase 7F — Question Content Localization EN/FR (recommended)
 ```

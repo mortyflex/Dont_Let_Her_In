@@ -1,10 +1,13 @@
 # Corridor Observation Design
 
-> **Status: PLANNED / PROPOSED (Phase 7D design).** This document describes the **next**
-> gameplay layer for *Don't Let Her In*. None of the observation camera pass, the visual
-> clue system or the data types proposed here are implemented yet. The current game already
-> has the descent loop with 5 trials per floor (Phase 7B.4); this document defines how those
-> trials should become **evidence-based corridor observation puzzles** in future phases.
+> **Status: PARTIALLY IMPLEMENTED.** The design was authored in Phase 7D. The **pure data
+> model** (`CorridorClue`, `CorridorClueType`, `EvidenceAnswerOption`, `EvidenceTrial`,
+> `FloorObservationSet`, `EvidenceTrialValidator`, `PrototypeEvidenceFloorSet`) is now
+> implemented and tested in **Phase 7E (DATA_MODEL_ONLY)**. Still **not** implemented: the
+> observation camera pass, the visual clue rendering, and any runtime use of the evidence
+> content (the live trial flow still uses `PrototypeFloorSet`). The current game has the
+> descent loop with 5 trials per floor (Phase 7B.4); this document defines how those trials
+> become **evidence-based corridor observation puzzles** across phases.
 
 ## Purpose
 
@@ -210,11 +213,16 @@ consumes the trial without pushing the threat back; wrong/timeout still bring he
 
 ## Data Model Proposal
 
-> **Proposed only — do not implement in this phase.** These types are an evolution of the
-> existing pure-data classes (`QuestionData`, `QuestionCue`, `FloorTrial`, `FloorDefinition`
-> in `UnityProject/Assets/Scripts/Questions/`). The intent is that a future `EvidenceTrial`
-> generalizes today's `FloorTrial` (question + cue), and a `CorridorClue` generalizes
-> today's `QuestionCue` by adding an in-world visual anchor and an explicit evidence value.
+> **Implemented in Phase 7E (data only).** These types now exist as pure-data classes in
+> `UnityProject/Assets/Scripts/Questions/` (`CorridorClue`, `CorridorClueType`,
+> `EvidenceAnswerOption`, `EvidenceTrial`, `FloorObservationSet`, plus `EvidenceTrialValidator`
+> / `EvidenceValidationResult` for validation and `PrototypeEvidenceFloorSet` for 25 sample
+> trials). They evolve the existing `QuestionData` / `QuestionCue` / `FloorTrial` /
+> `FloorDefinition`: `EvidenceTrial` generalizes `FloorTrial` (question + cue), and
+> `CorridorClue` generalizes `QuestionCue` with an in-world visual anchor and an explicit
+> evidence value. The fields below match the implementation (minor naming aligned to C#).
+> Not yet built: the `ObservationPhaseController` / `CorridorObservationController`
+> MonoBehaviours and any runtime use of this content.
 
 ### CorridorClueType (enum)
 
@@ -325,33 +333,36 @@ stays readable in portrait and does not overflow the cue panel.
 
 ## Prototype Implementation Plan
 
-Recommended future sequence (design only here; nothing below is implemented yet):
+Sequence (status reflects actual implementation):
 
 ```txt
-Phase 7E — Question Content Localization EN/FR
-           Localize the current 25 prototype questions/answers/cues, reusing
-           PrototypeLocalization. Establishes the EN/FR content pipeline.
+Phase 7E — Evidence Trial Data Model — DONE (DATA_MODEL_ONLY)
+           CorridorClue, CorridorClueType, EvidenceAnswerOption, EvidenceTrial,
+           FloorObservationSet, EvidenceTrialValidator/EvidenceValidationResult and a 25-trial
+           PrototypeEvidenceFloorSet, all pure data and EditMode-tested. The runtime trial
+           flow still uses PrototypeFloorSet; nothing visual was added.
 
-Phase 7F — Evidence Trial Data Model
-           Implement CorridorClue, CorridorClueType, FloorObservationSet,
-           EvidenceAnswerOption, EvidenceTrial as pure data (EditMode-testable),
-           mapping cleanly onto today's QuestionData/QuestionCue/FloorTrial.
+Phase 7F — Question Content Localization EN/FR (planned)
+           Localize the current live 25 prototype questions/answers/cues used by
+           PrototypeFloorSet, reusing PrototypeLocalization. (The evidence prototype set is
+           already EN/FR; this covers the questions still driving the runtime.)
 
-Phase 7G — Static Corridor Clue Prototype
-           Author one floor's FloorObservationSet and show its clues statically in the
-           corridor (no camera travel yet). Wire EvidenceTrials to clueIds.
+Phase 7G — Static Corridor Clue Prototype (planned)
+           Show one floor's FloorObservationSet clues statically in the corridor (no camera
+           travel yet). Wire EvidenceTrials to clueIds in the scene.
 
-Phase 7H — Observation Camera Pass Prototype
+Phase 7H — Observation Camera Pass Prototype (planned)
            Add ObservationPhaseController: slow forward/backward camera travel and the
            handoff to the trial sequence. Tuning of observationSeconds.
 
-Phase 7I — Evidence-Based Floor 5 Playtest
-           Convert Floor 5 fully to evidence-based trials and playtest the observe ->
-           remember -> answer rhythm end to end.
+Phase 7I — Evidence-Based Floor Playtest (planned)
+           Drive a floor (e.g. Floor 5) from PrototypeEvidenceFloorSet end to end and
+           playtest the observe -> remember -> answer rhythm.
 ```
 
-Rationale for this order: lock the EN/FR content pipeline first (7E), then the data model
-(7F), then static visuals (7G), then motion (7H), then a full vertical-slice playtest (7I).
+Rationale: build the pure data model and its validation first (7E, done) so content is
+authorable and provably well-formed before any visual/runtime work; then localization of the
+live questions (7F), static visuals (7G), motion (7H), and a full vertical-slice playtest (7I).
 Each phase is independently shippable and reversible.
 
 ## Out of Scope For Now

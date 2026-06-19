@@ -818,6 +818,43 @@ Accepted (planned)
 
 ---
 
+## 2026-06-19 — Implement the evidence trial data model as data-only (DATA_MODEL_ONLY)
+
+### Decision
+
+Phase 7E implements the evidence-based trial data model as pure, testable data
+(`CorridorClue`, `CorridorClueType`, `EvidenceAnswerOption`, `EvidenceTrial`,
+`FloorObservationSet`), a `EvidenceTrialValidator` (+ `EvidenceValidationResult`) and a
+25-trial `PrototypeEvidenceFloorSet` (EN/FR). The runtime trial flow is NOT switched to it:
+`PlayableRunFlowController` still uses `PrototypeFloorSet`.
+
+### Context
+
+The corridor-observation direction (Phase 7D) needs a concrete, validatable data model
+before any visual or camera work. Switching the live flow at the same time would risk the
+verified descent loop.
+
+### Reasoning
+
+Building the data model first, decoupled from the runtime, lets content be authored and
+proven well-formed (no trial without a clue, exactly 4 answers, exactly 1 correct, EN/FR
+present) with EditMode tests, while keeping the playable game unchanged and reversible.
+
+### Consequences
+
+- Validation lives in `EvidenceTrialValidator`; the data containers stay permissive holders.
+- The data types reuse `LocalizedText` / `GameLanguage` and evolve `QuestionData` /
+  `QuestionCue` / `FloorTrial` / `FloorDefinition`.
+- A future phase will wire `FloorObservationSet` into the runtime (after static clues and the
+  observation camera pass). Camera travelling and visual clues remain planned, not implemented.
+- EditMode tests increased from 148 to 179, all passing.
+
+### Status
+
+Accepted
+
+---
+
 ## 4. Replaced or Deprecated Decisions
 
 - **Door Seal scoring (Phase 7B.3)** — completed as an experiment, then removed from active

@@ -835,20 +835,22 @@ DOORS CLOSING -> DESCENDING) are verified manually in Play Mode (see playtest ch
 
 ## 22C. Future Test Expectations — Corridor Observation & Evidence Trials (planned)
 
-> **Planned, not yet implemented (Phase 7D design).** These expectations apply when the
-> evidence-based trial layer is built (see `Docs/CORRIDOR_OBSERVATION_DESIGN.md`). They are
-> recorded now so future agents know the validation bar. No tests exist for this yet.
+> **EditMode (pure data) expectations are IMPLEMENTED in Phase 7E**; the PlayMode/visual
+> expectations remain planned (see `Docs/CORRIDOR_OBSERVATION_DESIGN.md`). Test files:
+> `EvidenceTrialDataModelTests`, `EvidenceTrialValidatorTests`, `PrototypeEvidenceFloorSetTests`.
 
-EditMode (pure data) expectations:
+EditMode (pure data) expectations — covered by Phase 7E tests:
 
 ```txt
-Every EvidenceTrial references a clueId.
-Every referenced clueId exists in the floor's FloorObservationSet.
-Each floor exposes enough visible clues for its trials (minCluesForTrials >= trial count, >= 5).
-Each correct answer (correctAnswerId) matches the referenced clue's evidenceValue.
-Distractors are present and marked (plausibilityNote set); no answer set is correct-only.
-Clue ids and trial ids are unique within a floor.
-Clue text, trial prompt and answers have EN/FR coverage (or are language-independent visuals).
+Every EvidenceTrial references a clueId. (EvidenceTrialValidator)
+Every referenced clueId exists in the floor's FloorObservationSet. (validator + prototype test)
+Each floor has at least 5 trials. (validator: FloorFewerThanFiveTrials)
+Each trial has exactly 4 answers and exactly 1 correct answer. (validator + prototype test)
+Each prototype correct answer matches the referenced clue's evidence value. (prototype test)
+Clue ids and trial ids are unique within a floor; no empty ids. (validator)
+Clue evidence value is non-empty. (validator)
+Trial time limit is positive and difficulty >= 1. (validator)
+Prompts and answers have English (validator) and EN/FR in the prototype set (prototype test).
 ```
 
 PlayMode / manual expectations:
@@ -869,8 +871,9 @@ These tests must not change the current threat, descent or localization rules.
 Current status:
 
 ```txt
-148/148 EditMode tests passing after Phase 7B.4.
+179/179 EditMode tests passing after Phase 7E (was 148 after Phase 7B.4).
 Descent loop, non-receding threat, trial flow, per-floor reset and EN/FR localization are covered by EditMode tests.
+Phase 7E added evidence data-model tests (data containers, validator rules, prototype evidence set).
 Intro readability, floor transitions and French UI smoke check are manual Play Mode checks.
 No iOS build checks yet.
 ```
@@ -878,6 +881,6 @@ No iOS build checks yet.
 Next expected test activity:
 
 ```txt
-Phase 7D: confirm flow readability manually; add tests only if new logic is introduced.
-Phase 7E: add tests for question-content localization once questions are translated.
+Phase 7F: add tests for live question-content localization once the runtime questions are translated.
+Phase 7G+: PlayMode tests for static clues, observation handoff and camera pass when implemented.
 ```

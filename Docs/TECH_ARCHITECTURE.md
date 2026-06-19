@@ -98,31 +98,42 @@ ScriptableObject assets. The architecture stays compatible with adding them late
 
 ---
 
-## 1C. Planned Architecture — Corridor Observation & Evidence Trials (proposed)
+## 1C. Corridor Observation & Evidence Trials — Data Model (Phase 7E) + planned runtime
 
-> **Proposed / planned only — none of the types below are implemented.** Full design is in
-> `Docs/CORRIDOR_OBSERVATION_DESIGN.md`. This subsection records the intended architecture
-> so future phases stay consistent. Do not treat these as existing systems.
+> **Data model implemented in Phase 7E (DATA_MODEL_ONLY); runtime/visual systems still
+> planned.** Full design is in `Docs/CORRIDOR_OBSERVATION_DESIGN.md`. Goal: evolve trials
+> into evidence-based corridor observation puzzles (observe -> remember -> return -> answer)
+> without changing the threat or descent rules.
 
-Goal: evolve trials into evidence-based corridor observation puzzles (observe -> remember ->
-return -> answer) without changing the threat or descent rules.
-
-Proposed pure-data types (EditMode-testable, no Unity dependency), evolving today's
-`QuestionData` / `QuestionCue` / `FloorTrial` / `FloorDefinition`:
+Implemented pure-data types (Phase 7E, EditMode-tested, no Unity dependency), under
+`UnityProject/Assets/Scripts/Questions/`, evolving today's `QuestionData` / `QuestionCue` /
+`FloorTrial` / `FloorDefinition`:
 
 ```txt
 CorridorClueType (enum) - DoorNumber, WallMessage, Symbol, LightState, ObjectPlacement,
-                          Anomaly, ColorCue, AudioProxy, ShadowOrSilhouette, DirectionInstruction
-CorridorClue            - id, type, floorDisplayNumber, label, localizedDescription,
-                          visualAnchor, evidenceValue, difficultyWeight, isRequiredForTrial
+                          Anomaly, ColorCue, AudioProxy, ShadowOrSilhouette,
+                          DirectionInstruction, ScratchedCode, DoorState
+CorridorClue            - Id, Type, FloorDisplayNumber, Label (LocalizedText),
+                          Description (LocalizedText), VisualAnchor, EvidenceValue,
+                          DifficultyWeight, IsRequiredForTrial
                           (generalizes QuestionCue with an in-world visual anchor + evidence)
-FloorObservationSet     - floorDisplayNumber, clues, observationSeconds, minCluesForTrials
-EvidenceAnswerOption    - id, localizedText, isCorrect, plausibilityNote
-EvidenceTrial           - id, clueId (REQUIRED, must exist), prompt, answers, correctAnswerId,
-                          timeLimit, difficulty, localization (generalizes FloorTrial)
+EvidenceAnswerOption    - Id, Text (LocalizedText), IsCorrect
+EvidenceTrial           - Id, ClueId (REQUIRED), Prompt (LocalizedText),
+                          Answers (IReadOnlyList<EvidenceAnswerOption>), TimeLimitSeconds,
+                          Difficulty (generalizes FloorTrial)
+FloorObservationSet     - FloorDisplayNumber, Clues, Trials (+ clue lookup helpers)
+EvidenceTrialValidator  - pure validator -> EvidenceValidationResult (typed issues):
+                          no empty/duplicate ids, every trial references an existing clue,
+                          exactly 4 answers, exactly 1 correct, positive time, difficulty >= 1,
+                          non-empty clue evidence, >= 5 trials/floor, English present for
+                          prompts/answers.
+PrototypeEvidenceFloorSet - 5 floors x 5 evidence trials (25), EN/FR, validatable; DATA ONLY.
 ```
 
-Proposed MonoBehaviours (presentation/sequencing only — own NO trial/threat rules):
+These types are not yet used at runtime: `PlayableRunFlowController` still drives trials from
+`PrototypeFloorSet`. Reuses `LocalizedText` / `GameLanguage` from `DontLetHerIn.GameLoop`.
+
+Proposed MonoBehaviours (still planned — own NO trial/threat rules):
 
 ```txt
 ObservationPhaseController    - plays forward/backward camera travel, exposes the floor's
@@ -138,7 +149,7 @@ only after the handoff. The current trial flow, `ThreatManager` rules, `DescentF
 tuning and descent transitions remain unchanged. Localization reuses the existing
 `PrototypeLocalization` / `LocalizedText` / `GameLanguage` approach.
 
-Recommended phasing: 7E (question localization EN/FR) -> 7F (evidence data model) ->
+Phasing: 7E (evidence data model — DONE) -> 7F (question content localization EN/FR) ->
 7G (static corridor clues) -> 7H (observation camera pass) -> 7I (evidence-based floor playtest).
 
 ---
