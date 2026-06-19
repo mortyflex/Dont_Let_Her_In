@@ -43,8 +43,8 @@ namespace DontLetHerIn.GameLoop
 
         private RunController _run;
         private QuestionManager _questions;
-        private IReadOnlyList<QuestionData> _questionSet;
-        private IReadOnlyDictionary<string, QuestionCue> _cues;
+        private IReadOnlyList<FloorDefinition> _floors;
+        private RunTrialProgress _progress;
         private Coroutine _advanceRoutine;
         private bool _eventsBound;
 
@@ -64,9 +64,9 @@ namespace DontLetHerIn.GameLoop
 #endif
             }
 
-            _questionSet = PrototypeQuestionSet.BuildAll();
-            _cues = PrototypeQuestionCueSet.BuildById();
-            _run = new RunController(_questionSet.Count);
+            _floors = PrototypeFloorSet.BuildAll();
+            _progress = new RunTrialProgress(PrototypeFloorSet.TrialCounts());
+            _run = new RunController(_floors.Count);
             _questions = new QuestionManager();
             _questions.AnswerResolved += HandleAnswerResolved;
         }
@@ -149,27 +149,42 @@ namespace DontLetHerIn.GameLoop
         {
             StopAdvanceRoutine();
             _run.StartRun();
+            _progress.Reset();
             if (ui != null) ui.ShowGameplay();
             UpdateCreature();
             RefreshThreatHud();
-            StartCurrentQuestion();
+            StartCurrentTrial();
         }
 
-        private void StartCurrentQuestion()
+        private void StartCurrentTrial()
         {
-            int index = _run.CurrentFloor - 1;
-            if (index < 0 || index >= _questionSet.Count) return;
+            FloorTrial trial = CurrentTrial();
+            if (trial == null) return;
 
-            QuestionData question = _questionSet[index];
+            QuestionData question = trial.Question;
             if (ui != null)
             {
-                ui.UpdateFloor(_run.CurrentFloor, _run.TotalFloors);
+                ui.UpdateProgress(_progress.CurrentFloorNumber, _progress.FloorCount,
+                    _progress.CurrentTrialNumber, _progress.TrialsInCurrentFloor);
                 ui.ShowQuestion(question);
-                ShowCueForQuestion(question);
+                ShowCue(trial.Cue);
                 ui.SetAnswersInteractable(true);
                 ui.UpdateTimer(question.TimeLimitSeconds, question.TimeLimitSeconds);
             }
             _questions.StartQuestion(question);
+        }
+
+        /// <summary>The trial the player is currently on, or null if indices are out of range.</summary>
+        private FloorTrial CurrentTrial()
+        {
+            int f = _progress.CurrentFloorIndex;
+            if (_floors == null || f < 0 || f >= _floors.Count) return null;
+
+            IReadOnlyList<FloorTrial> trials = _floors[f].Trials;
+            int t = _progress.CurrentTrialIndex;
+            if (t < 0 || t >= trials.Count) return null;
+
+            return trials[t];
         }
 
         private void HandleAnswerResolved(AnswerResult result)
@@ -185,35 +200,37 @@ namespace DontLetHerIn.GameLoop
                 ui.SetAnswersInteractable(false);
             }
 
-            // Only a correct answer clears the current floor (Phase 7B.1). Wrong/timeout
-            // are danger, not progress: if they did not kill, the same floor stays active.
-            bool isFinalFloor = _run.CurrentFloor >= _run.TotalFloors;
-            FloorResolution resolution = FloorClearResolver.Resolve(outcome, _run.HasLost, isFinalFloor);
+            // Every trial result (correct/wrong/timeout) consumes the current trial
+            // (Phase 7B.2). Death overrides everything; otherwise we either advance to the
+            // next trial of the same floor, clear the floor, or escape on the final floor.
+            TrialResolution resolution = TrialFlowResolver.Resolve(
+                _run.HasLost, _progress.IsFinalTrialInFloor, _progress.IsFinalFloor);
             float hold = InterQuestionPacing.GetHoldSeconds(outcome, statusHoldSeconds, dangerHoldExtraSeconds);
 
             switch (resolution)
             {
-                case FloorResolution.Lost:
+                case TrialResolution.Lost:
                     ShowResult(won: false);
                     return;
 
-                case FloorResolution.Escaped:
-                    _run.CompleteFloor(); // final floor cleared -> marks the run won
+                case TrialResolution.Escaped:
+                    _run.CompleteFloor(); // final floor fully cleared -> marks the run won
                     ShowResult(won: true);
                     return;
 
-                case FloorResolution.FloorCleared:
-                    // Non-final floor cleared: survival, not escape. Hold on the outcome
-                    // (Phase 7 pacing), then play the inter-floor transition. After
-                    // CompleteFloor, CurrentFloor is the floor the elevator climbs to.
-                    _run.CompleteFloor();
-                    _advanceRoutine = StartCoroutine(ClearFloorThenAdvance(hold, _run.CurrentFloor));
+                case TrialResolution.NextTrialSameFloor:
+                    // Floor not finished: move to the next trial of the SAME floor after the
+                    // hold (no transition, no floor advance). Not a retry of the same question.
+                    _progress.AdvanceTrial();
+                    _advanceRoutine = StartCoroutine(NextTrialAfterDelay(hold));
                     return;
 
-                case FloorResolution.RetrySameFloor:
-                    // Wrong/timeout but still alive: no CompleteFloor, no transition.
-                    // Re-arm the same floor's question after the danger hold.
-                    _advanceRoutine = StartCoroutine(RetrySameFloorAfterDelay(hold));
+                case TrialResolution.FloorCleared:
+                    // Last trial of a non-final floor survived: advance both the run (floor
+                    // stats/threat owner) and the trial progress, then play the transition.
+                    _run.CompleteFloor();
+                    _progress.AdvanceFloor();
+                    _advanceRoutine = StartCoroutine(ClearFloorThenAdvance(hold));
                     return;
             }
         }
@@ -231,27 +248,28 @@ namespace DontLetHerIn.GameLoop
         }
 
         /// <summary>
-        /// Wrong answer or timeout that did not kill the player: the floor was not cleared,
-        /// so after the danger feedback hold we re-arm the SAME floor's question (cue and
-        /// timer reset). The floor index is unchanged, so no transition is shown.
+        /// Trial consumed but the floor is not finished: after the feedback hold, start the
+        /// NEXT trial of the same floor (progress was already advanced). Cue and timer reset
+        /// via <see cref="StartCurrentTrial"/>. No floor transition is shown.
         /// </summary>
-        private IEnumerator RetrySameFloorAfterDelay(float holdSeconds)
+        private IEnumerator NextTrialAfterDelay(float holdSeconds)
         {
             yield return new WaitForSeconds(holdSeconds);
             _advanceRoutine = null;
             if (_run.IsRunning)
             {
-                StartCurrentQuestion();
+                StartCurrentTrial();
             }
         }
 
         /// <summary>
-        /// After a non-final floor is cleared: hold on the answer outcome (Phase 7 pacing),
-        /// then play a short UI-only elevator transition (FLOOR CLEARED -> DOORS CLOSING ->
-        /// ASCENDING) that frames the clear as temporary safety, then start the next floor.
-        /// Danger is paused during the transition: no threat/creature change is applied here.
+        /// After a non-final floor is fully cleared: hold on the answer outcome (Phase 7
+        /// pacing), then play a short UI-only elevator transition (FLOOR CLEARED -> DOORS
+        /// CLOSING -> ASCENDING) framing temporary safety, then start the next floor's first
+        /// trial. Progress already points at the next floor. Danger is paused during the
+        /// transition: no threat/creature change is applied here.
         /// </summary>
-        private IEnumerator ClearFloorThenAdvance(float outcomeHold, int nextFloor)
+        private IEnumerator ClearFloorThenAdvance(float outcomeHold)
         {
             yield return new WaitForSeconds(outcomeHold);
             if (!_run.IsRunning) { _advanceRoutine = null; yield break; }
@@ -271,10 +289,11 @@ namespace DontLetHerIn.GameLoop
 
             if (ui != null)
             {
-                // Reveal the floor we are climbing to during the ascent.
-                ui.UpdateFloor(nextFloor, _run.TotalFloors);
+                // Reveal the floor we are climbing to (and its first trial) during the ascent.
+                ui.UpdateProgress(_progress.CurrentFloorNumber, _progress.FloorCount,
+                    _progress.CurrentTrialNumber, _progress.TrialsInCurrentFloor);
                 ui.ShowFloorTransition(FloorTransitionText.AscendingTitle,
-                    FloorTransitionText.GetAscendingSubtitle(nextFloor, _run.TotalFloors));
+                    FloorTransitionText.GetAscendingSubtitle(_progress.CurrentFloorNumber, _progress.FloorCount));
             }
             yield return new WaitForSeconds(ascendingHoldSeconds);
 
@@ -283,7 +302,7 @@ namespace DontLetHerIn.GameLoop
             _advanceRoutine = null;
             if (_run.IsRunning)
             {
-                StartCurrentQuestion();
+                StartCurrentTrial();
             }
         }
 
@@ -298,10 +317,10 @@ namespace DontLetHerIn.GameLoop
 
         // ---- View helpers --------------------------------------------------
 
-        private void ShowCueForQuestion(QuestionData question)
+        private void ShowCue(QuestionCue cue)
         {
             if (ui == null) return;
-            if (_cues != null && question != null && _cues.TryGetValue(question.Id, out QuestionCue cue))
+            if (cue != null)
             {
                 ui.ShowCue(cue);
             }

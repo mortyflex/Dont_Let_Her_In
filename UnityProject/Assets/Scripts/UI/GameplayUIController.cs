@@ -306,9 +306,13 @@ namespace DontLetHerIn.UI
             }
         }
 
-        public void UpdateFloor(int floor, int totalFloors)
+        /// <summary>
+        /// Show floor and trial progression together (Phase 7B.2). The player is climbing
+        /// floors and surviving trials, so the HUD reads e.g. "FLOOR 1 / 5 — TRIAL 1 / 2".
+        /// </summary>
+        public void UpdateProgress(int floor, int totalFloors, int trial, int totalTrials)
         {
-            _floorText.text = $"FLOOR {floor} / {totalFloors}";
+            _floorText.text = $"FLOOR {floor} / {totalFloors}   —   TRIAL {trial} / {totalTrials}";
         }
 
         public void UpdateThreat(int distance, int stress, CreaturePhase phase)
@@ -489,7 +493,7 @@ namespace DontLetHerIn.UI
             _dangerOverlay.raycastTarget = false;
 
             // ---- TOP HUD (compact translucent band; corridor stays visible) ----
-            _floorText = CreateText("FloorText", root, "FLOOR 1 / 5", 42, TextAnchor.MiddleCenter,
+            _floorText = CreateText("FloorText", root, "FLOOR 1 / 5   —   TRIAL 1 / 2", 38, TextAnchor.MiddleCenter,
                 new Vector2(0.05f, 0.952f), new Vector2(0.95f, 0.995f));
             _floorText.fontStyle = FontStyle.Bold;
 
