@@ -41,6 +41,13 @@ namespace DontLetHerIn.UI
         private static readonly Color CueColor = new Color(0.95f, 0.30f, 0.27f, 1f);
         private static readonly Color CueDimColor = new Color(0.78f, 0.78f, 0.74f, 1f);
 
+        // Phase 6 horror feedback colours (short flashes + near-death overlay).
+        private static readonly Color FlashGood = new Color(0.40f, 0.90f, 0.45f, 1f);
+        private static readonly Color FlashBad = new Color(0.85f, 0.10f, 0.10f, 1f);
+        private static readonly Color FlashDark = new Color(0.02f, 0f, 0f, 1f);
+        private static readonly Color DangerOverlayColor = new Color(0.45f, 0f, 0f, 1f);
+        private static readonly Color LossPanelColor = new Color(0.18f, 0.01f, 0.01f, 0.90f);
+
         /// <summary>Raised when the player presses Start.</summary>
         public event Action StartClicked;
 
@@ -66,7 +73,15 @@ namespace DontLetHerIn.UI
         private Text _cueLines;
         private Text _questionText;
         private Text _statusText;
+        private Text _proximityText;
         private Text _resultText;
+        private Text _resultSubtitleText;
+
+        private Image _flashOverlay;
+        private Image _dangerOverlay;
+        private Image _resultPanelImage;
+        private Coroutine _flashRoutine;
+        private Coroutine _pulseRoutine;
 
         private readonly Button[] _answerButtons = new Button[AnswerButtonCount];
         private readonly Text[] _answerLabels = new Text[AnswerButtonCount];
@@ -92,6 +107,12 @@ namespace DontLetHerIn.UI
             BuildStartPanel(canvasRoot);
             BuildResultPanel(canvasRoot);
 
+            // Full-screen flash overlay, created last so it sits on top of everything.
+            // It is transparent and never receives input, so it never blocks the buttons.
+            _flashOverlay = CreatePanel("FlashOverlay", canvasRoot, new Color(0f, 0f, 0f, 0f),
+                new Vector2(0f, 0f), new Vector2(1f, 1f)).GetComponent<Image>();
+            _flashOverlay.raycastTarget = false;
+
             ShowStartPanel();
         }
 
@@ -110,14 +131,43 @@ namespace DontLetHerIn.UI
             _gameplayRoot.SetActive(true);
             _resultPanel.SetActive(false);
             SetStatus(string.Empty, TextColor);
+            ResetFeedback();
+        }
+
+        /// <summary>Clear any lingering flash, overlay and warning state (e.g. on restart).</summary>
+        private void ResetFeedback()
+        {
+            if (_flashRoutine != null) { StopCoroutine(_flashRoutine); _flashRoutine = null; }
+            if (_pulseRoutine != null) { StopCoroutine(_pulseRoutine); _pulseRoutine = null; }
+            if (_flashOverlay != null) _flashOverlay.color = new Color(0f, 0f, 0f, 0f);
+            if (_dangerOverlay != null) _dangerOverlay.color = new Color(DangerOverlayColor.r, DangerOverlayColor.g, DangerOverlayColor.b, 0f);
+            if (_statusText != null) _statusText.rectTransform.localScale = Vector3.one;
+            if (_proximityText != null) _proximityText.text = string.Empty;
         }
 
         public void ShowResult(bool won, string detail)
         {
             _gameplayRoot.SetActive(true); // keep HUD visible behind the result overlay
             _resultPanel.SetActive(true);
-            _resultText.text = (won ? "YOU ESCAPED" : "SHE GOT IN") + "\n\n" + detail;
+
+            // Dark/red overlay on loss, neutral dark on win.
+            if (_resultPanelImage != null)
+            {
+                _resultPanelImage.color = won ? DimColor : LossPanelColor;
+            }
+
+            _resultText.text = won ? "YOU ESCAPED" : "SHE GOT IN";
             _resultText.color = won ? GoodColor : BadColor;
+
+            if (_resultSubtitleText != null)
+            {
+                _resultSubtitleText.text = (won ? "The doors finally close." : "You hesitated too long.")
+                    + "\n\n" + detail;
+                _resultSubtitleText.color = TextColor;
+            }
+
+            // A final flash punctuates the outcome over the result overlay.
+            Flash(won ? FlashGood : FlashBad, won ? 0.25f : 0.5f, won ? 0.35f : 0.5f);
         }
 
         public void ShowQuestion(QuestionData question)
@@ -259,26 +309,107 @@ namespace DontLetHerIn.UI
             _statusText.color = color;
         }
 
+        /// <summary>
+        /// Show outcome feedback: a status message plus a short, transparent flash and an
+        /// optional pulse. Flashes fade quickly and never receive input, so the corridor,
+        /// question and answer buttons stay readable.
+        /// </summary>
         public void ShowOutcomeStatus(AnswerOutcome outcome)
         {
             switch (outcome)
             {
                 case AnswerOutcome.CorrectFast:
-                    SetStatus("CORRECT — she recoils", GoodColor);
+                    SetStatus("FAST — SHE RECOILS", GoodColor);
+                    Flash(FlashGood, 0.18f, 0.22f);
                     break;
                 case AnswerOutcome.CorrectNormal:
-                    SetStatus("Correct", GoodColor);
+                    SetStatus("CORRECT — KEEP MOVING", GoodColor);
+                    Flash(FlashGood, 0.10f, 0.18f);
                     break;
                 case AnswerOutcome.CorrectSlow:
-                    SetStatus("Correct, but too slow", WarnColor);
+                    SetStatus("TOO SLOW — BARELY", WarnColor);
+                    Flash(WarnColor, 0.10f, 0.18f);
                     break;
                 case AnswerOutcome.Wrong:
-                    SetStatus("WRONG — she steps closer", BadColor);
+                    SetStatus("WRONG — SHE MOVES", BadColor);
+                    Flash(FlashBad, 0.30f, 0.30f);
+                    Pulse(_statusText != null ? _statusText.rectTransform : null, 1.18f, 0.22f);
                     break;
                 case AnswerOutcome.Timeout:
-                    SetStatus("TOO LATE — she lunges", BadColor);
+                    SetStatus("TOO LATE — SHE HEARD YOU", BadColor);
+                    // Stronger, darker flash ("brief blackout") for the worst outcome.
+                    Flash(FlashDark, 0.55f, 0.40f);
+                    Pulse(_statusText != null ? _statusText.rectTransform : null, 1.22f, 0.26f);
                     break;
             }
+        }
+
+        /// <summary>
+        /// Update threat-proximity feedback from the current distance: the near-death
+        /// overlay alpha ramps in below distance 25 and a warning message appears for
+        /// near-death (&lt;= 25) and panic (&lt;= 10). Above that, no overlay/warning.
+        /// </summary>
+        public void UpdateProximity(int distance)
+        {
+            if (_dangerOverlay != null)
+            {
+                float alpha = ThreatProximityFeedback.GetOverlayAlpha(distance);
+                _dangerOverlay.color = new Color(DangerOverlayColor.r, DangerOverlayColor.g, DangerOverlayColor.b, alpha);
+            }
+
+            if (_proximityText != null)
+            {
+                _proximityText.text = ThreatProximityFeedback.IsNearDeath(distance)
+                    ? ThreatProximityFeedback.GetMessage(distance)
+                    : string.Empty;
+            }
+        }
+
+        /// <summary>Play a short, fading full-screen flash of the given colour.</summary>
+        public void Flash(Color color, float peakAlpha, float duration)
+        {
+            if (_flashOverlay == null) return;
+            if (_flashRoutine != null) StopCoroutine(_flashRoutine);
+            _flashRoutine = StartCoroutine(FlashRoutine(color, peakAlpha, duration));
+        }
+
+        private System.Collections.IEnumerator FlashRoutine(Color color, float peakAlpha, float duration)
+        {
+            float t = 0f;
+            while (t < duration)
+            {
+                t += Time.unscaledDeltaTime;
+                float a = Mathf.Lerp(peakAlpha, 0f, duration > 0f ? t / duration : 1f);
+                _flashOverlay.color = new Color(color.r, color.g, color.b, a);
+                yield return null;
+            }
+            _flashOverlay.color = new Color(color.r, color.g, color.b, 0f);
+            _flashRoutine = null;
+        }
+
+        /// <summary>Briefly scale a UI element up then back to one (a safe danger "pulse").</summary>
+        public void Pulse(RectTransform target, float peakScale, float duration)
+        {
+            if (target == null) return;
+            if (_pulseRoutine != null) StopCoroutine(_pulseRoutine);
+            _pulseRoutine = StartCoroutine(PulseRoutine(target, peakScale, duration));
+        }
+
+        private System.Collections.IEnumerator PulseRoutine(RectTransform target, float peakScale, float duration)
+        {
+            float t = 0f;
+            while (t < duration)
+            {
+                t += Time.unscaledDeltaTime;
+                float p = duration > 0f ? t / duration : 1f;
+                // Up then back down: triangular profile peaking at the midpoint.
+                float tri = 1f - Mathf.Abs(0.5f - p) * 2f;
+                float scale = Mathf.Lerp(1f, peakScale, tri);
+                target.localScale = new Vector3(scale, scale, 1f);
+                yield return null;
+            }
+            target.localScale = Vector3.one;
+            _pulseRoutine = null;
         }
 
         // ---- Build helpers -------------------------------------------------
@@ -307,6 +438,13 @@ namespace DontLetHerIn.UI
         {
             _gameplayRoot = CreateContainer("GameplayRoot", parent);
             var root = (RectTransform)_gameplayRoot.transform;
+
+            // Near-death overlay: behind the HUD (first sibling) so text stays readable.
+            // Starts fully transparent; its alpha is driven by threat distance.
+            _dangerOverlay = CreatePanel("DangerOverlay", root,
+                new Color(DangerOverlayColor.r, DangerOverlayColor.g, DangerOverlayColor.b, 0f),
+                new Vector2(0f, 0f), new Vector2(1f, 1f)).GetComponent<Image>();
+            _dangerOverlay.raycastTarget = false;
 
             // ---- TOP HUD (compact translucent band; corridor stays visible) ----
             _floorText = CreateText("FloorText", root, "FLOOR 1 / 5", 42, TextAnchor.MiddleCenter,
@@ -342,6 +480,12 @@ namespace DontLetHerIn.UI
             _cueZone.SetActive(false);
 
             // ---- MIDDLE (0.42 - 0.76) intentionally left clear: corridor + creature ----
+            // Proximity warning sits high over the corridor and only appears near death,
+            // so it never blocks the cue, the question or the answer buttons.
+            _proximityText = CreateText("ProximityText", root, string.Empty, 46, TextAnchor.MiddleCenter,
+                new Vector2(0.05f, 0.690f), new Vector2(0.95f, 0.752f));
+            _proximityText.fontStyle = FontStyle.Bold;
+            _proximityText.color = BadColor;
 
             // ---- BOTTOM: feedback + compact question + answers ----
             _statusText = CreateText("StatusText", root, string.Empty, 38, TextAnchor.MiddleCenter,
@@ -391,15 +535,23 @@ namespace DontLetHerIn.UI
 
         private void BuildResultPanel(RectTransform parent)
         {
-            _resultPanel = CreatePanel("ResultPanel", parent, DimColor,
-                new Vector2(0f, 0f), new Vector2(1f, 1f)).gameObject;
-            var root = (RectTransform)_resultPanel.transform;
+            RectTransform panel = CreatePanel("ResultPanel", parent, DimColor,
+                new Vector2(0f, 0f), new Vector2(1f, 1f));
+            _resultPanel = panel.gameObject;
+            _resultPanelImage = panel.GetComponent<Image>();
+            var root = panel;
 
-            _resultText = CreateText("ResultText", root, string.Empty, 52, TextAnchor.MiddleCenter,
-                new Vector2(0.05f, 0.45f), new Vector2(0.95f, 0.8f));
+            // Large outcome headline.
+            _resultText = CreateText("ResultText", root, string.Empty, 84, TextAnchor.MiddleCenter,
+                new Vector2(0.05f, 0.60f), new Vector2(0.95f, 0.80f));
+            _resultText.fontStyle = FontStyle.Bold;
+
+            // Subtitle + run detail.
+            _resultSubtitleText = CreateText("ResultSubtitle", root, string.Empty, 32, TextAnchor.UpperCenter,
+                new Vector2(0.08f, 0.42f), new Vector2(0.92f, 0.58f));
 
             Button restart = CreateButton("RestartButton", root, out Text restartLabel,
-                new Vector2(0.2f, 0.28f), new Vector2(0.8f, 0.38f));
+                new Vector2(0.2f, 0.26f), new Vector2(0.8f, 0.36f));
             restartLabel.text = "RESTART";
             restartLabel.fontSize = 44;
             restart.onClick.AddListener(() => RestartClicked?.Invoke());

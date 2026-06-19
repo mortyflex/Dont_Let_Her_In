@@ -250,6 +250,7 @@ namespace DontLetHerIn.GameLoop
                 ? creature.CurrentPhase
                 : CreatureDistanceMapper.GetPhase(distance);
             ui.UpdateThreat(distance, _run.Threat.StressLevel, phase);
+            ui.UpdateProximity(distance);
         }
 
         private void ShowResult(bool won)
