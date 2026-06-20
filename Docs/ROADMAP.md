@@ -1026,15 +1026,14 @@ Observation camera pass added in Phase 7H: a short OBSERVE THE CORRIDOR moment p
   clue board stays visible. HYBRID: subtle Main Camera ease toward the corridor + timed overlay,
   with an overlay-only fallback if no camera is found. No Cinemachine, no new package, no scene edit.
   EditMode tests: 219/219 passing.
-Phase 7H.1 tunes the observation pass from user playtest feedback: slower, longer camera travel
-  (move 0.6->1.2s, hold 2.0->2.5s, return 0.4->0.7s, ~4.4s total) reaching farther toward the
-  corridor/red light (forward 0.2->1.5m, height 0.05->0.1m), and the clue board is now
-  observation-only — visible during the pass, then HIDDEN when the first question starts so the
-  player answers from memory. No scene edit (fields use C# initializers). EditMode tests: 227/227 passing.
-Phase 7H.2 turns the observation move into a real travelling (further playtest feedback):
-  move 1.2->5.0s, hold 2.5->0.5s, return 0.7->5.0s (~10.5s total, bounded <= 11s) and farther travel
-  (forward 1.5->5.0m, height 0.1->0.15m). Camera still returns to the gameplay pose before the
-  question. Clue board rule and all gameplay unchanged. No scene edit. EditMode tests: 230/230 passing.
+Phase 7H.1 tunes the observation pass from user playtest feedback, then was corrected over a few
+  playtest passes into a real slow travelling. Final 7H.1 state: a slow camera travel toward the
+  corridor / red light (move ~8s, hold ~0.5s, return ~8s, ~16.5s total, bounded <= 17s) reaching
+  forward ~7m (height ~0.18m) just before the red light, returning to the gameplay pose before the
+  question. The clue board is observation-only (visible during the pass, HIDDEN during questions so
+  the player answers from memory), and the creature is hidden for the whole observation travel and
+  only re-appears (per threat state) once the answer phase starts. No scene edit (fields use C#
+  initializers). EditMode tests: 233/233 passing.
 No iOS build yet.
 ```
 

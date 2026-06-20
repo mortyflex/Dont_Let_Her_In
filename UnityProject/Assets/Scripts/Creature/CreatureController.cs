@@ -30,8 +30,16 @@ namespace DontLetHerIn.Creature
         // When true, the visual root is hidden while the creature is in the Far phase.
         [SerializeField] private bool hideWhenFar = true;
 
+        // Phase 7H.1 correction: while true, the visual root is force-hidden regardless of phase
+        // (used to keep the creature invisible during the observation travelling). Pure visual
+        // masking only — distance, phase and threat rules are untouched.
+        private bool _observationHidden;
+
         /// <summary>Raised when <see cref="CurrentPhase"/> changes.</summary>
         public event Action<CreaturePhase> PhaseChanged;
+
+        /// <summary>True when the optional visual root is currently shown (false if hidden or unassigned).</summary>
+        public bool IsVisualVisible => visualRoot != null && visualRoot.activeSelf;
 
         /// <summary>Most recent distance fed into <see cref="ApplyDistance"/>.</summary>
         public float CurrentDistance { get; private set; }
@@ -85,11 +93,25 @@ namespace DontLetHerIn.Creature
                 return;
             }
 
-            bool visible = !(hideWhenFar && phase == CreaturePhase.Far);
+            // During observation the creature is force-hidden; otherwise normal phase rules apply.
+            bool visible = !_observationHidden && !(hideWhenFar && phase == CreaturePhase.Far);
             if (visualRoot.activeSelf != visible)
             {
                 visualRoot.SetActive(visible);
             }
+        }
+
+        /// <summary>
+        /// Phase 7H.1 correction: hide or restore the creature's visual root for the observation
+        /// travelling. When <paramref name="hidden"/> is true the creature is never visible until
+        /// restored; when false, normal phase-based visibility resumes for the current phase.
+        /// This is a pure visual mask: it does not change distance, phase, stress or threat rules.
+        /// Safe when no visual root is assigned (scene not fully built).
+        /// </summary>
+        public void SetObservationHidden(bool hidden)
+        {
+            _observationHidden = hidden;
+            UpdateVisibility(CurrentPhase);
         }
 
         /// <summary>Return the assigned anchor for a phase, or null when none is set.</summary>

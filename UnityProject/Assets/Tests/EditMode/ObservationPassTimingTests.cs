@@ -13,32 +13,32 @@ namespace DontLetHerIn.Tests.EditMode
             Phase7HMoveSeconds + Phase7HHoldSeconds + Phase7HReturnSeconds; // 3.0s
 
         [Test]
-        public void Default_UsesRecommendedPhase7H2Values()
+        public void Default_UsesRecommendedSlowTravelValues()
         {
             var timing = ObservationPassTiming.Default;
             Assert.AreEqual(0.5f, timing.ObservationHoldSeconds, 0.0001f);
-            Assert.AreEqual(5.0f, timing.CameraMoveSeconds, 0.0001f);
-            Assert.AreEqual(5.0f, timing.CameraReturnSeconds, 0.0001f);
+            Assert.AreEqual(8.0f, timing.CameraMoveSeconds, 0.0001f);
+            Assert.AreEqual(8.0f, timing.CameraReturnSeconds, 0.0001f);
         }
 
         [Test]
-        public void Default_CameraMove_IsFiveSeconds()
+        public void Default_CameraMove_IsEightSeconds()
         {
-            Assert.AreEqual(5.0f, ObservationPassTiming.Default.CameraMoveSeconds, 0.0001f);
+            Assert.AreEqual(8.0f, ObservationPassTiming.Default.CameraMoveSeconds, 0.0001f);
         }
 
         [Test]
-        public void Default_CameraReturn_IsFiveSeconds()
+        public void Default_CameraReturn_IsEightSeconds()
         {
-            Assert.AreEqual(5.0f, ObservationPassTiming.Default.CameraReturnSeconds, 0.0001f);
+            Assert.AreEqual(8.0f, ObservationPassTiming.Default.CameraReturnSeconds, 0.0001f);
         }
 
         [Test]
-        public void Default_Total_IsAroundTenSeconds()
+        public void Default_Total_IsAroundSixteenSeconds()
         {
-            // Phase 7H.2: ~5s out + brief hold + ~5s back. Around 10s (10.5s with a 0.5s hold).
-            Assert.AreEqual(10.5f, ObservationPassTiming.Default.TotalSeconds, 0.0001f);
-            Assert.GreaterOrEqual(ObservationPassTiming.Default.TotalSeconds, 10f);
+            // Phase 7H.1 slow travel: ~8s out + brief hold + ~8s back. ~16s (16.5s with a 0.5s hold).
+            Assert.AreEqual(16.5f, ObservationPassTiming.Default.TotalSeconds, 0.0001f);
+            Assert.GreaterOrEqual(ObservationPassTiming.Default.TotalSeconds, 16f);
         }
 
         [Test]
@@ -77,8 +77,8 @@ namespace DontLetHerIn.Tests.EditMode
         [Test]
         public void Default_Total_IsBounded_AndNotExcessive()
         {
-            // A real travelling but still bounded: total stays under ~11s.
-            Assert.LessOrEqual(ObservationPassTiming.Default.TotalSeconds, 11f);
+            // A real slow travelling but still bounded: total stays under ~17s.
+            Assert.LessOrEqual(ObservationPassTiming.Default.TotalSeconds, 17f);
         }
 
         [Test]

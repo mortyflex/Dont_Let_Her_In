@@ -41,24 +41,24 @@ namespace DontLetHerIn.GameLoop
         [Tooltip("Seconds the ASCENDING message holds before the next floor starts.")]
         [SerializeField] private float ascendingHoldSeconds = 0.8f;
 
-        [Header("Observation pass (Phase 7H / 7H.1 / 7H.2 tuning)")]
+        [Header("Observation pass (Phase 7H + 7H.1 tuning)")]
         [Tooltip("Optional. Falls back to Camera.main, then the first Camera found in the scene.")]
         [SerializeField] private Camera observationCamera;
 
         [Tooltip("Seconds the camera pauses at the deep point of the travel (0..0.5).")]
         [SerializeField] private float observationHoldSeconds = 0.5f;
 
-        [Tooltip("Seconds of the slow travel toward the corridor / red light (Phase 7H.2 ~5s).")]
-        [SerializeField] private float cameraMoveSeconds = 5.0f;
+        [Tooltip("Seconds of the slow travel toward the corridor / red light (~8s).")]
+        [SerializeField] private float cameraMoveSeconds = 8.0f;
 
-        [Tooltip("Seconds of the slow travel back to the gameplay pose before the trial (~5s).")]
-        [SerializeField] private float cameraReturnSeconds = 5.0f;
+        [Tooltip("Seconds of the slow travel back to the gameplay pose before the trial (~8s).")]
+        [SerializeField] private float cameraReturnSeconds = 8.0f;
 
         [Tooltip("How far the camera travels toward the corridor / red light during observation (metres).")]
-        [SerializeField] private float observationForwardOffset = 5.0f;
+        [SerializeField] private float observationForwardOffset = 7.0f;
 
         [Tooltip("How much the camera rises during observation (metres). Keep small.")]
-        [SerializeField] private float observationHeightOffset = 0.15f;
+        [SerializeField] private float observationHeightOffset = 0.18f;
 
         private RunController _run;
         private QuestionManager _questions;
@@ -428,17 +428,22 @@ namespace DontLetHerIn.GameLoop
                 ui.PrepareObservation();   // hide question/answers/cue/status, keep clue board
                 ui.ShowObservationHint();  // localized OBSERVE THE CORRIDOR overlay
             }
+            // Phase 7H.1 correction: the creature is never visible during the observation travel.
+            if (creature != null) creature.SetObservationHidden(true);
 
             Vector3 home = _cameraHomePosition;
             Vector3 observe = ObservePosition();
 
-            // Subtle camera ease toward the corridor, hold, then settle back. With no camera
-            // the moves still wait so the overlay-only fallback keeps the same pacing.
+            // Slow camera travel toward the corridor / red light, brief hold, then travel back.
+            // With no camera the moves still wait so the overlay-only fallback keeps the pacing.
             yield return MoveCameraTo(home, observe, _observationTiming.CameraMoveSeconds);
             yield return new WaitForSeconds(_observationTiming.ObservationHoldSeconds);
             yield return MoveCameraTo(observe, home, _observationTiming.CameraReturnSeconds);
 
             if (ui != null) ui.HideObservationHint();
+            // Restore normal phase-based creature visibility so she can appear during the answer
+            // phase according to the current threat state (not during the travel).
+            if (creature != null) creature.SetObservationHidden(false);
             _observation.Complete();
             _observationRoutine = null;
 
@@ -448,7 +453,7 @@ namespace DontLetHerIn.GameLoop
             }
         }
 
-        /// <summary>The subtle "look into the corridor" pose: slightly forward and higher.</summary>
+        /// <summary>The "look into the corridor" pose: travel forward toward the red light, raised.</summary>
         private Vector3 ObservePosition()
         {
             if (!_cameraPoseCaptured) return _cameraHomePosition;
@@ -507,6 +512,8 @@ namespace DontLetHerIn.GameLoop
                     t.localRotation = _cameraHomeRotation;
                 }
                 if (ui != null) ui.HideObservationHint();
+                // Restore creature visibility so an interrupted pass never leaves her stuck hidden.
+                if (creature != null) creature.SetObservationHidden(false);
                 _observation.Reset();
             }
         }

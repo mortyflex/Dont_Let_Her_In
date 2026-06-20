@@ -1019,34 +1019,42 @@ Accepted
 
 ---
 
-## 2026-06-20 — Make the observation pass a real slow travelling (Phase 7H.2)
+## 2026-06-20 — Phase 7H.1 correction: slow observation travel + creature hidden during observation
 
 ### Decision
 
-After further playtest feedback, the observation camera move becomes a real travelling: a slow ~5s
-travel toward the corridor/red light, a brief ~0.5s hold, then a slow ~5s travel back (~10.5s
-total, bounded under 11s), and it reaches much farther (forward 1.5->5.0m, height 0.1->0.15m). The
-camera still returns to the gameplay pose before the question. Only the observation timing/distance
-change; the clue board rule and all gameplay are unchanged.
+This is a correction/adjustment of Phase 7H.1 (NOT a new official phase). Over a few playtest
+passes the observation camera move became a real slow travelling: ~8s travel toward the
+corridor/red light, a brief ~0.5s hold, then ~8s travel back (~16.5s total, bounded under 17s),
+reaching forward ~7m (height ~0.18m) so it stops just before the red light past the last doors.
+The camera still returns to the gameplay pose before the question. Additionally, the creature is
+hidden for the whole observation travel and only re-appears (per threat state) once the answer
+phase starts. Only observation timing/distance and creature visual masking change; the clue board
+rule and all gameplay are unchanged.
 
 ### Context
 
-Phase 7H.1 was still too fast and too short to read as an observation travelling. The user asked
-for roughly 5s out and 5s back, reaching deep toward the red light at the end of the corridor.
+The first 7H.1 pass (then an intermediate ~5s pass) was still too fast/too short and stopped too
+far from the red light, and the creature was visible during the travel. The user asked for ~8s out
+and ~8s back, reaching just before the red light, with the creature only appearing while answering.
 
 ### Reasoning
 
-These are plain serialized values on `PlayableRunFlowController` plus the `ObservationPassTiming`
-defaults; the scene does not serialize them, so updating the C# initializers changes runtime with
-no `Game.unity` edit. Moving along the camera's own forward axis aims at the corridor/red light and
-returns to the stored home pose, so the camera never sticks forward. No Cinemachine, no new package.
+The timing/distance are plain serialized values on `PlayableRunFlowController` plus the
+`ObservationPassTiming` defaults; the scene does not serialize them, so updating the C# initializers
+changes runtime with no `Game.unity` edit. Moving along the camera's own forward axis aims at the
+corridor/red light and returns to the stored home pose, so the camera never sticks forward. The
+creature mask is a pure visual toggle (`CreatureController.SetObservationHidden(bool)`) that hides
+the visual root regardless of phase and restores phase-based visibility afterwards — it does not
+touch distance, phase, stress or threat rules. No Cinemachine, no new package.
 
 ### Consequences
 
 - `Game.unity` is unchanged; behavior changes come from script defaults only.
-- The pass is much longer (~10.5s) but still bounded (tests assert <= 11s).
+- The pass is much longer (~16.5s) but still bounded (tests assert <= 17s).
+- The creature is invisible during observation and appears only in the answer phase per threat state.
 - Clue board stays observation-only; descent, threat, trials and EN/FR localization are unchanged.
-- A real per-clue / rail-based travelling and world-space clues remain future work. EditMode tests: 230.
+- A real per-clue / rail-based travelling and world-space clues remain future work. EditMode tests: 233.
 
 ### Status
 

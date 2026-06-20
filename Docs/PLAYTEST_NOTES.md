@@ -245,26 +245,30 @@ board ever stays visible during a question (it should not in 7H.1).
 
 ---
 
-## 3G. Phase 7H.2 Checklist — Slow Observation Travel
+## 3G. Phase 7H.1 correction Checklist — Slow Observation Travel + Creature Hidden
 
-Phase 7H.2 turns the observation move into a real travelling (only timing/distance change).
+Phase 7H.1 slow-travel correction (only timing/distance and creature visibility change).
 Items unchecked; run in Game view portrait (e.g. 1080x1920).
 
 ```txt
-[ ] On Floor 5 the camera now performs a clear, slow TRAVELLING: ~5s forward toward the corridor/
-    red light, a brief pause, then ~5s back (~10.5s total). It should read as a real travel, not a nudge.
-[ ] The camera reaches much FARTHER than Phase 7H.1 (forward ~5m, height ~0.15m).
+[ ] On Floor 5 the camera performs a clear, slow TRAVELLING: ~8s forward toward the corridor/
+    red light, a brief pause, then ~8s back (~16.5s total). It should read as a real travel, not a nudge.
+[ ] The camera reaches FARTHER, stopping just before the red light past the last doors (forward ~7m,
+    height ~0.18m), without clipping into the red light or through a wall.
 [ ] The camera returns to the normal gameplay pose BEFORE the first question appears (not stuck forward).
 [ ] During the whole travel: question/answers hidden, timer not counting, threat (DIST/STRESS) frozen.
+[ ] The creature is NEVER visible during the observation travel (hidden the whole time).
+[ ] The creature only appears during the answer phase (per threat state), after the travel ends.
 [ ] The "OBSERVED CLUES" board is visible during the travel, then hidden when the first question starts.
 [ ] After descent, Floor 4 repeats the same slow travel with its own clues; same down to Floor 1.
 [ ] Restart repeats the same slow travel on the top floor.
-[ ] Camera does not rotate wildly and (ideally) does not clip through walls at ~5m forward.
+[ ] Camera does not rotate wildly and (ideally) does not clip through walls at ~7m forward.
 [ ] No red Console errors.
 ```
 
-Note: ~10.5s total is intentional. Report if it feels too long, if 5m forward clips into geometry,
-or if the camera ever fails to return before the question.
+Note: ~16.5s total is intentional. Report if it feels too long, if 7m forward clips into the red
+light/geometry, if the camera ever fails to return before the question, or if the creature is
+visible at any point during the observation.
 
 ---
 

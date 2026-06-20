@@ -89,6 +89,70 @@ namespace DontLetHerIn.Tests.EditMode
             Assert.AreEqual(1, raisedCount);
         }
 
+        // ---- Phase 7H.1 correction: observation visual masking -------------
+
+        [Test]
+        public void SetObservationHidden_HidesCreature_EvenWhenVisiblePhase()
+        {
+            CreatureController controller = MakeController();
+            GameObject visual = AttachVisualRoot(controller);
+
+            // Visible phase normally shows the creature.
+            controller.ApplyDistance(50f); // MidCorridor -> visible
+            Assert.IsTrue(controller.IsVisualVisible);
+            Assert.IsTrue(visual.activeSelf);
+
+            // Hidden during observation: never visible, regardless of phase.
+            controller.SetObservationHidden(true);
+            Assert.IsFalse(controller.IsVisualVisible);
+            Assert.IsFalse(visual.activeSelf);
+        }
+
+        [Test]
+        public void SetObservationHidden_RestoresPhaseVisibility_AfterObservation()
+        {
+            CreatureController controller = MakeController();
+            GameObject visual = AttachVisualRoot(controller);
+
+            controller.ApplyDistance(50f); // visible phase
+            controller.SetObservationHidden(true);
+            Assert.IsFalse(controller.IsVisualVisible);
+
+            // After observation, normal phase-based visibility resumes.
+            controller.SetObservationHidden(false);
+            Assert.IsTrue(controller.IsVisualVisible);
+            Assert.IsTrue(visual.activeSelf);
+        }
+
+        [Test]
+        public void SetObservationHidden_DoesNotChangeDistanceOrPhase()
+        {
+            CreatureController controller = MakeController();
+            AttachVisualRoot(controller);
+
+            controller.ApplyDistance(50f);
+            CreaturePhase phase = controller.CurrentPhase;
+            float distance = controller.CurrentDistance;
+
+            controller.SetObservationHidden(true);
+            controller.SetObservationHidden(false);
+
+            // Pure visual mask: threat distance and phase are untouched.
+            Assert.AreEqual(phase, controller.CurrentPhase);
+            Assert.AreEqual(distance, controller.CurrentDistance);
+        }
+
+        private GameObject AttachVisualRoot(CreatureController controller)
+        {
+            var visual = new GameObject("VisualRoot");
+            visual.transform.SetParent(controller.transform, false);
+            FieldInfo field = typeof(CreatureController).GetField(
+                "visualRoot", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field, "Expected private field 'visualRoot' on CreatureController.");
+            field.SetValue(controller, visual);
+            return visual;
+        }
+
         private static void SetPrivateAnchor(CreatureController controller, string fieldName, Transform value)
         {
             FieldInfo field = typeof(CreatureController).GetField(
