@@ -166,6 +166,10 @@ namespace DontLetHerIn.GameLoop
             _run.ResetThreatForFloor(DescentFloorProfile.StartDistance(displayFloor));
             UpdateCreature();
             RefreshThreatHud();
+
+            // Phase 7G: show this floor's static corridor clues (evidence bridge). Pure
+            // display only — the playable trials still come from PrototypeFloorSet.
+            if (ui != null) ui.UpdateClues(displayFloor);
         }
 
         private void StartCurrentTrial()

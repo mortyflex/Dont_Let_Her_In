@@ -946,7 +946,12 @@ Phase 7F   — Question Content Localization EN/FR: localized the LIVE playable 
              French fields on QuestionData/QuestionCue resolved by PrototypeLocalization.Language
              (Option A). English stays the default; gameplay (index-based correct answer,
              floor/trial counts, threat tuning) is unchanged. EditMode tests: 189/189 passing.
-             (This phase.)
+Phase 7G   — Static Corridor Clue Prototype (CLUE_BOARD): added a code-built "OBSERVED CLUES"
+             board to the runtime HUD showing the current floor's 5 evidence clues, sourced
+             from PrototypeEvidenceFloorSet via a pure CorridorClueDisplayFormatter and
+             localized EN/FR. Updated on run start and each descent (PlayableRunFlowController
+             .BeginFloor). Playable trials still come from PrototypeFloorSet; no Game.unity
+             edit, no camera travel, no final art. EditMode tests: 204/204 passing. (This phase.)
 ```
 
 Important: Phase 7B.3 (Door Seal) is a **completed experiment that was intentionally
@@ -955,21 +960,26 @@ re-implemented as active gameplay.
 
 ---
 
-## 17C. Recommended Next Phases (after 7F)
+## 17C. Recommended Next Phases (after 7G)
 
-Phase 7E implemented the evidence-trial data model (data only) and Phase 7F localized the
-live playable trial content EN/FR (see `Docs/CORRIDOR_OBSERVATION_DESIGN.md`). The
-recommended sequence to continue:
+Phase 7E implemented the evidence-trial data model (data only), Phase 7F localized the live
+playable trial content EN/FR, and Phase 7G added the static corridor clue board (see
+`Docs/CORRIDOR_OBSERVATION_DESIGN.md`). The recommended sequence to continue:
 
 ```txt
-Phase 7G — Static Corridor Clue Prototype
-           (show one floor's FloorObservationSet clues statically in the corridor; wire
-            EvidenceTrials to clueIds in the scene)
 Phase 7H — Observation Camera Pass Prototype
            (ObservationPhaseController: slow forward/backward camera travel + handoff to trials)
 Phase 7I — Evidence-Based Floor Playtest
            (drive a floor from PrototypeEvidenceFloorSet end to end; playtest observe ->
             remember -> answer)
+```
+
+Optional follow-ups (not blocking):
+
+```txt
+- Place clues as individual in-corridor anchors (Option B) instead of a single board.
+- Align PrototypeEvidenceFloorSet clue values 1:1 with PrototypeFloorSet trial answers
+  (currently theme-aligned per display floor; ~22/25 exact value matches).
 ```
 
 Optional follow-up (not blocking):
@@ -1007,12 +1017,14 @@ Corridor observation / evidence-based trials direction designed in Phase 7D
 Evidence trial data model implemented in Phase 7E (data only; runtime still uses
   PrototypeFloorSet).
 Live playable trial content localized EN/FR in Phase 7F (prompts/answers/cues), English default.
-  EditMode tests: 189/189 passing.
+Static corridor clue board added in Phase 7G (OBSERVED CLUES, per-floor, EN/FR; evidence bridge,
+  reads PrototypeEvidenceFloorSet; runtime trials still from PrototypeFloorSet; no scene edit).
+  EditMode tests: 204/204 passing.
 No iOS build yet.
 ```
 
 Next planned step:
 
 ```txt
-Phase 7G — Static Corridor Clue Prototype (recommended)
+Phase 7H — Observation Camera Pass Prototype (recommended)
 ```

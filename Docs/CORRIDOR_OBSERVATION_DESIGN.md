@@ -349,9 +349,12 @@ Phase 7F — Question Content Localization EN/FR — DONE
            via optional French fields on QuestionData/QuestionCue, resolved by
            PrototypeLocalization.Language. Runtime localizes EN/FR with no gameplay change.
 
-Phase 7G — Static Corridor Clue Prototype (planned)
-           Show one floor's FloorObservationSet clues statically in the corridor (no camera
-           travel yet). Wire EvidenceTrials to clueIds in the scene.
+Phase 7G — Static Corridor Clue Prototype — DONE (CLUE_BOARD)
+           A code-built "OBSERVED CLUES" board on the runtime HUD shows the current floor's
+           5 evidence clues (CorridorClueDisplayFormatter reading PrototypeEvidenceFloorSet),
+           localized EN/FR, updated per floor on BeginFloor. Display only — no in-corridor
+           anchors yet, no camera travel, no Game.unity edit. (Option B per-anchor clues and
+           1:1 evidence/PrototypeFloorSet value alignment remain follow-ups.)
 
 Phase 7H — Observation Camera Pass Prototype (planned)
            Add ObservationPhaseController: slow forward/backward camera travel and the

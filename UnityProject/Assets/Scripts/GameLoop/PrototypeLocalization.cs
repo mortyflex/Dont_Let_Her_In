@@ -46,6 +46,10 @@ namespace DontLetHerIn.GameLoop
         public static readonly LocalizedText GroundFloor =
             new LocalizedText("GROUND FLOOR", "REZ-DE-CHAUSSÉE");
 
+        // ---- Corridor clue board (Phase 7G) ----
+        public static readonly LocalizedText ObservedClues =
+            new LocalizedText("OBSERVED CLUES", "INDICES OBSERVÉS");
+
         // ---- Result ----
         public static readonly LocalizedText YouEscaped =
             new LocalizedText("YOU ESCAPED", "TU ES SORTI");

@@ -895,6 +895,45 @@ Accepted
 
 ---
 
+## 2026-06-19 — Static corridor clues as a code-built HUD clue board (Option A)
+
+### Decision
+
+Phase 7G surfaces the evidence loop with a static "OBSERVED CLUES" board built in code on the
+runtime HUD (`GameplayUIController`), not as in-corridor GameObjects. It shows the current
+floor's 5 clues from `PrototypeEvidenceFloorSet` via a pure `CorridorClueDisplayFormatter`,
+localized EN/FR, updated per floor from `PlayableRunFlowController.BeginFloor`. The playable
+trials still come from `PrototypeFloorSet`.
+
+### Context
+
+The corridor-observation direction needs a first visible bridge so the player sees that
+answers come from the corridor. A full per-anchor in-world clue layout (Option B) and a
+camera observation pass are higher-risk and deferred.
+
+### Reasoning
+
+Option A is the lowest-risk way to prove the evidence relationship: the HUD is already built
+in code, so adding a translucent board needs no `Game.unity` edit (no scene-merge risk) and no
+new packages. Keeping the mapping/formatting pure makes it fully EditMode-testable. Reading
+`PrototypeEvidenceFloorSet` (the preferred evidence source) keeps content in one place.
+
+### Consequences
+
+- `Game.unity` is unchanged; the board lives inside the runtime-built HUD and hides with it
+  on the start/result screens; it is placed clear of the timer, answers and proximity warning.
+- Clue content is theme-aligned to the playable floor by displayed number (~22/25 exact value
+  matches); full 1:1 alignment and per-anchor in-world clues are follow-ups.
+- Evidence values themselves are not separately localized (numbers/symbols are language-neutral;
+  a few English words remain); the clue source label is localized EN/FR.
+- Gameplay, threat tuning, descent and question localization are unchanged. EditMode tests: 204.
+
+### Status
+
+Accepted
+
+---
+
 ## 4. Replaced or Deprecated Decisions
 
 - **Door Seal scoring (Phase 7B.3)** — completed as an experiment, then removed from active

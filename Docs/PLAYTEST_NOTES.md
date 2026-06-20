@@ -157,6 +157,34 @@ Note: question / answer / cue text is still English-only even when the UI is set
 
 ---
 
+## 3D. Phase 7G Checklist — Static Corridor Clue Board
+
+Phase 7G adds a code-built "OBSERVED CLUES" board to the runtime HUD (evidence bridge, not
+final art; the runtime trials still come from `PrototypeFloorSet`). Items unchecked; run in
+Game view portrait (e.g. 1080x1920).
+
+```txt
+[ ] Game.unity opens; Play Mode starts with no red Console errors.
+[ ] Intro appears; BEGIN DESCENT starts the run.
+[ ] On Floor 5 an "OBSERVED CLUES" board is visible with 5 clue lines.
+[ ] The board does NOT cover the answer buttons, the timer or the question text.
+[ ] The corridor / creature remain readable behind the translucent board.
+[ ] Floor 5 clues relate to the Floor 5 questions (e.g. ROOM DISPLAY: 104).
+[ ] Answering works; wrong/timeout still move the threat closer.
+[ ] After surviving Floor 5, on descent the board updates to Floor 4's clues.
+[ ] Same per-floor update down to Floor 1.
+[ ] English default shows English clues (OBSERVED CLUES).
+[ ] Setting PrototypeLocalization.Language = GameLanguage.French shows French clues
+    (INDICES OBSERVÉS, NUMÉRO DE PORTE, ...).
+[ ] Restart after win/loss re-shows the top floor's clues.
+```
+
+Note: clue evidence values are theme-aligned to the playable floor (~22/25 exact value
+matches); a few clue lines may not be the literal answer yet. Report any clue that clearly
+contradicts its floor's questions.
+
+---
+
 ## 4. Manual Playtest Checklist
 
 For every playable build, test:

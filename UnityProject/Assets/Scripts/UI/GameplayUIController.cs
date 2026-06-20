@@ -71,6 +71,8 @@ namespace DontLetHerIn.UI
         private GameObject _cueZone;
         private Text _cueLabel;
         private Text _cueLines;
+        private GameObject _clueBoardZone;
+        private Text _clueBoardText;
         private GameObject _questionPanel;
         private Text _questionText;
         private Text _statusText;
@@ -336,6 +338,29 @@ namespace DontLetHerIn.UI
             _floorText.text = PrototypeLocalization.FloorAndTrial(floor, trial, totalTrials);
         }
 
+        /// <summary>
+        /// Refresh the static corridor clue board for the given displayed floor (Phase 7G).
+        /// Reads the evidence data via <see cref="CorridorClueDisplayFormatter"/> and the
+        /// current <see cref="PrototypeLocalization.Language"/>. Hides the board when the
+        /// floor has no clues (safe fallback). This is a prototype evidence bridge, not final UI.
+        /// </summary>
+        public void UpdateClues(int floorDisplayNumber)
+        {
+            if (_clueBoardText == null || _clueBoardZone == null) return;
+
+            var entries = CorridorClueDisplayFormatter.BuildEntries(floorDisplayNumber);
+            if (entries.Count == 0)
+            {
+                _clueBoardText.text = string.Empty;
+                _clueBoardZone.SetActive(false);
+                return;
+            }
+
+            _clueBoardText.text =
+                CorridorClueDisplayFormatter.BuildBoardText(floorDisplayNumber, PrototypeLocalization.Language);
+            _clueBoardZone.SetActive(true);
+        }
+
         public void UpdateThreat(int distance, int stress, CreaturePhase phase)
         {
             _threatText.text = $"DIST {distance}   STRESS {stress}   {PhaseLabel(phase)}";
@@ -555,6 +580,18 @@ namespace DontLetHerIn.UI
                 new Vector2(0.05f, 0.690f), new Vector2(0.95f, 0.752f));
             _proximityText.fontStyle = FontStyle.Bold;
             _proximityText.color = BadColor;
+
+            // ---- CORRIDOR CLUE BOARD (Phase 7G) ----
+            // Static "observed clues" board for the current floor. Sits on the left of the
+            // mid-corridor area: translucent so the corridor stays visible, and clear of the
+            // timer (top), the status/question/answers (bottom) and the proximity warning.
+            RectTransform cluePanel = CreatePanel("ClueBoardZone", root, CuePanelColor,
+                new Vector2(0.04f, 0.470f), new Vector2(0.62f, 0.682f));
+            _clueBoardZone = cluePanel.gameObject;
+            _clueBoardText = CreateText("ClueBoardText", cluePanel, string.Empty, 26, TextAnchor.UpperLeft,
+                new Vector2(0.06f, 0.05f), new Vector2(0.96f, 0.95f));
+            _clueBoardText.color = CueDimColor;
+            _clueBoardZone.SetActive(false);
 
             // ---- BOTTOM: feedback + compact question + answers ----
             _statusText = CreateText("StatusText", root, string.Empty, 38, TextAnchor.MiddleCenter,

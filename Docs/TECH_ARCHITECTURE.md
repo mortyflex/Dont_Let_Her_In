@@ -135,8 +135,28 @@ EvidenceTrialValidator  - pure validator -> EvidenceValidationResult (typed issu
 PrototypeEvidenceFloorSet - 5 floors x 5 evidence trials (25), EN/FR, validatable; DATA ONLY.
 ```
 
-These types are not yet used at runtime: `PlayableRunFlowController` still drives trials from
-`PrototypeFloorSet`. Reuses `LocalizedText` / `GameLanguage` from `DontLetHerIn.GameLoop`.
+These types are not yet used at runtime for the trials themselves: `PlayableRunFlowController`
+still drives trials from `PrototypeFloorSet`. Reuses `LocalizedText` / `GameLanguage`.
+
+Static corridor clue board (Phase 7G — first evidence bridge, display only):
+
+```txt
+CorridorClueDisplayEntry      - pure: one board line (clue id, type, localized Label,
+                                EvidenceValue) with GetLine(GameLanguage).
+CorridorClueDisplayFormatter  - pure: BuildEntries(floorDisplayNumber) reads
+                                PrototypeEvidenceFloorSet; BuildBoardText(floor, language)
+                                returns the localized "OBSERVED CLUES" board (never null;
+                                empty floor -> header only). Header from
+                                PrototypeLocalization.ObservedClues (EN/FR).
+GameplayUIController.UpdateClues(int) - runtime HUD: a translucent left-mid "OBSERVED CLUES"
+                                panel built in code (no Game.unity edit), updated per floor.
+PlayableRunFlowController.BeginFloor  - calls ui.UpdateClues(displayFloor) on run start and
+                                each descent. Display only; trials still from PrototypeFloorSet.
+```
+
+The clue board reads the evidence model for content while the playable questions stay on
+`PrototypeFloorSet`; the two are theme-aligned per displayed floor. The observation camera
+pass and per-anchor in-world clues remain future phases.
 
 Proposed MonoBehaviours (still planned — own NO trial/threat rules):
 
