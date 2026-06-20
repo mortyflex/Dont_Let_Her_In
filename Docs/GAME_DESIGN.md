@@ -42,8 +42,9 @@ The deeper the descent, the closer the threat starts (less safety).
 After clearing a non-final floor a prototype elevator descent transition plays (Phase 7I):
   FLOOR CLEARED -> doors close -> DESCENDING (subtle vertical descent cue, floor indicator updates)
   -> doors open -> the next floor's observation pass starts ONLY after the doors open.
-  The creature and the clue board stay hidden for the whole transition; it is shorter (~3.8s) than
-  the observation pass. The transition is a UI prototype (dark sliding panels), not final art.
+  The creature and the clue board stay hidden for the whole transition; it is slower/heavier (~6.8s)
+  but still shorter than the observation pass. The doors are dark UI panels covering only the central
+  corridor aperture (the cabin sides stay visible), a prototype visual, not final art.
 After clearing Floor 1: GROUND FLOOR -> YOU ESCAPED (no descent transition after the final escape).
 ```
 

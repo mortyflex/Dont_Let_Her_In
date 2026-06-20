@@ -871,7 +871,7 @@ These tests must not change the current threat, descent or localization rules.
 Current status:
 
 ```txt
-251/251 EditMode tests passing after Phase 7I (233 after the Phase 7H.1 slow-travel correction, 219 after 7H, 204 after 7G, 189 after 7F, 179 after 7E, 148 after 7B.4).
+255/255 EditMode tests passing after the Phase 7I door framing/timing adjustment (251 after the first Phase 7I, 233 after the Phase 7H.1 slow-travel correction, 219 after 7H, 204 after 7G, 189 after 7F, 179 after 7E, 148 after 7B.4).
 Descent loop, non-receding threat, trial flow, per-floor reset and EN/FR localization are covered by EditMode tests.
 Phase 7E added evidence data-model tests (data containers, validator rules, prototype evidence set).
 Phase 7F added PlayableContentLocalizationTests: the live PrototypeFloorSet prompts/answers/cues
@@ -903,6 +903,11 @@ Phase 7I added 18 elevator-transition tests: ElevatorTransitionTimingTests (reco
   FLOOR CLEARED/DOORS CLOSING/DESCENDING/FLOOR {n}, language resolution, and via TrialFlowResolver
   that a non-final floor clear -> FloorCleared (transition) while the final floor -> Escaped (no
   transition)).
+Phase 7I playtest correction updated ElevatorTransitionTimingTests to the adjusted defaults
+  (0.8/1.5/3.0/1.5): door close/open and descent are each slower than the initial Phase 7I values,
+  total ~6.8s stays bounded (<= 8s) and shorter than the observation pass, and
+  GameplayUIController.DoorApertureWidthRatio is asserted < 1.0 and within 0.55..0.8 (doors are not
+  full-screen; the side cabin stays visible).
 Intro readability, floor transitions, French UI smoke check and the clue board are manual Play Mode checks.
 The observation overlay/camera ease itself is a manual Play Mode check (MonoBehaviour/coroutine);
   the testable timing/state logic is isolated in ObservationPassTiming / ObservationPassState.

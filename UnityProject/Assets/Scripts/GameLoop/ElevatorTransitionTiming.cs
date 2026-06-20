@@ -7,21 +7,21 @@ namespace DontLetHerIn.GameLoop
     /// testable in EditMode. Negative inputs are clamped to zero. The transition is intentionally
     /// shorter than the observation pass.
     ///
-    /// Design targets (Phase 7I):
+    /// Design targets (Phase 7I door framing/timing adjustment — slower, heavier descent):
     /// <code>
-    /// floorClearedHoldSeconds = 0.8
-    /// doorCloseSeconds        = 0.8
-    /// descentHoldSeconds      = 1.4
-    /// doorOpenSeconds         = 0.8
-    /// total                   ≈ 3.8s (readable, shorter than the observation pass)
+    /// floorClearedHoldSeconds = 0.8  (kept short)
+    /// doorCloseSeconds        = 1.5  (slower than the initial 0.8)
+    /// descentHoldSeconds      = 3.0  (longer descent, more dread, than the initial 1.4)
+    /// doorOpenSeconds         = 1.5  (slower than the initial 0.8)
+    /// total                   ≈ 6.8s (heavier, bounded, still shorter than the observation pass)
     /// </code>
     /// </summary>
     public sealed class ElevatorTransitionTiming
     {
         public const float DefaultFloorClearedHoldSeconds = 0.8f;
-        public const float DefaultDoorCloseSeconds = 0.8f;
-        public const float DefaultDescentHoldSeconds = 1.4f;
-        public const float DefaultDoorOpenSeconds = 0.8f;
+        public const float DefaultDoorCloseSeconds = 1.5f;
+        public const float DefaultDescentHoldSeconds = 3.0f;
+        public const float DefaultDoorOpenSeconds = 1.5f;
 
         /// <summary>How long the FLOOR CLEARED beat holds before the doors start closing.</summary>
         public float FloorClearedHoldSeconds { get; }
@@ -46,7 +46,7 @@ namespace DontLetHerIn.GameLoop
 
         private static float Clamp(float value) => value < 0f ? 0f : value;
 
-        /// <summary>The recommended Phase 7I timing (~3.8s total).</summary>
+        /// <summary>The recommended Phase 7I timing (~6.8s total after the pacing adjustment).</summary>
         public static ElevatorTransitionTiming Default => new ElevatorTransitionTiming(
             DefaultFloorClearedHoldSeconds, DefaultDoorCloseSeconds, DefaultDescentHoldSeconds, DefaultDoorOpenSeconds);
 

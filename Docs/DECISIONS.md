@@ -1104,6 +1104,43 @@ observation (still observation-only). The transition only runs on `TrialResoluti
 
 ### Status
 
+Accepted (adjusted — see the Phase 7I door framing/timing adjustment below)
+
+---
+
+## 2026-06-20 — Phase 7I door framing/timing adjustment (playtest correction)
+
+### Decision
+
+This is a playtest correction of Phase 7I (NOT a new phase). The descent transition is slower and
+heavier (doorClose 0.8->1.5s, descent 1.4->3.0s, doorOpen 0.8->1.5s; ~6.8s total, bounded <= 8s,
+still shorter than the observation pass), and the doors no longer cover the whole screen: they only
+cover the central corridor aperture (`GameplayUIController.DoorApertureWidthRatio` = 0.68), so the
+side cabin (buttons/walls) stays visible and the in-elevator feel is preserved.
+
+### Context
+
+The first Phase 7I doors closed too fast and covered the full screen, which lost the "inside the
+elevator" feel. The user asked for a slower, heavier descent and for the doors to close around the
+corridor opening only, keeping the cabin sides visible.
+
+### Reasoning
+
+Timing is plain serialized fields + the `ElevatorTransitionTiming` defaults (scene does not
+serialize them, so no `Game.unity` edit). The doors are re-anchored within a centred aperture: each
+leaf grows from its aperture edge to the centre as it closes and collapses to zero width at the
+edge when open, so the side margins are never covered. The aperture ratio is a public const, making
+the "not full-screen" rule unit-testable.
+
+### Consequences
+
+- `Game.unity` is unchanged; the cabin sides stay visible during the transition.
+- The transition is longer (~6.8s) but still bounded and shorter than the observation pass.
+- Gameplay, threat/clue/creature rules, observation pass, restart and EN/FR localization are unchanged.
+- Real cabin/button art and door models remain future work. EditMode tests: 255.
+
+### Status
+
 Accepted
 
 ---

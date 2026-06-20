@@ -1037,12 +1037,16 @@ Phase 7H.1 tunes the observation pass from user playtest feedback, then was corr
 Phase 7I adds a prototype elevator descent transition between floors: after a NON-final floor is
   cleared, the trial HUD/clue board hide, two dark UI "doors" close, DESCENDING plays with a subtle
   vertical descent cue while the floor indicator updates, then the doors open and only THEN the next
-  floor's observation pass starts. Timing ~0.8/0.8/1.4/0.8s (~3.8s total, shorter than observation).
-  The creature stays hidden and the clue board stays hidden for the whole transition; the clue board
-  is now revealed at observation start (not at BeginFloor). No transition after the final Floor 1
-  escape. UI-only prototype (no door models, no Cinemachine, no scene edit). New localized DOORS
-  OPENING / PORTES EN OUVERTURE; FLOOR CLEARED / DOORS CLOSING / DESCENDING / FLOOR {n} reused.
-  EditMode tests: 251/251 passing.
+  floor's observation pass starts. The creature stays hidden and the clue board stays hidden for the
+  whole transition; the clue board is now revealed at observation start (not at BeginFloor). No
+  transition after the final Floor 1 escape. UI-only prototype (no door models, no Cinemachine, no
+  scene edit). New localized DOORS OPENING / PORTES EN OUVERTURE; FLOOR CLEARED / DOORS CLOSING /
+  DESCENDING / FLOOR {n} reused.
+Phase 7I playtest correction (door framing/timing adjustment): the transition is slower/heavier —
+  doorClose 0.8->1.5s, descent 1.4->3.0s, doorOpen 0.8->1.5s (~6.8s total, bounded <= 8s, still
+  shorter than the observation pass) — and the doors no longer cover the full screen: they only
+  cover the central corridor aperture (DoorApertureWidthRatio 0.68), so the side cabin (buttons/
+  walls) stays visible and the in-elevator feel is kept. No scene edit. EditMode tests: 255/255 passing.
 No iOS build yet.
 ```
 

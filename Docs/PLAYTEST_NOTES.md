@@ -281,15 +281,16 @@ Items unchecked; run in Game view portrait (e.g. 1080x1920).
 [ ] BEGIN DESCENT; Floor 5 observation works as validated (clue board only during observation).
 [ ] Answer the 5 Floor 5 trials so the floor is cleared.
 [ ] On floor clear the question/answers disappear and the clue board is hidden.
-[ ] FLOOR CLEARED shows, then two dark elevator doors CLOSE over the screen.
-[ ] DESCENDING shows with a subtle vertical descent cue (text shake), doors closed.
+[ ] FLOOR CLEARED shows, then two dark elevator doors CLOSE — SLOWLY — over the central corridor
+    opening only (NOT the whole screen); the side cabin (where buttons/walls would be) stays visible.
+[ ] DESCENDING shows with a subtle vertical descent cue (text shake), doors closed, for ~3s.
 [ ] The creature is NOT visible at any point during the transition.
 [ ] The floor indicator updates to the next floor while the doors are closed.
-[ ] The doors OPEN again (DOORS OPENING).
+[ ] The doors OPEN again (DOORS OPENING), SLOWLY.
 [ ] Floor 4 observation pass starts ONLY after the doors have opened.
 [ ] Floor 4 clue board appears during observation, then hides when the first question starts.
 [ ] No clue board and no observation appear before the doors open.
-[ ] The transition is clearly shorter than the observation pass (~3.5-4.5s).
+[ ] The transition feels heavier/slower (~6.5-7s) but is still shorter than the observation pass.
 [ ] Repeat down the floors; completing Floor 1 ESCAPES (ground floor result) with NO new
     descent transition afterwards.
 [ ] Restart works and the doors never start a run already closed.
@@ -297,9 +298,10 @@ Items unchecked; run in Game view portrait (e.g. 1080x1920).
 [ ] No red Console errors.
 ```
 
-Note: doors are prototype UI panels (no models). Report if the doors get stuck, if the creature or
-clue board appears during the transition, if observation starts before the doors open, or if a
-descent transition runs after the final Floor 1 escape.
+Note: doors are prototype UI panels (no models) covering only the central aperture (~68% width).
+Report if the doors get stuck, if they still feel too fast or cover too much of the screen, if the
+creature or clue board appears during the transition, if observation starts before the doors open,
+or if a descent transition runs after the final Floor 1 escape.
 
 ---
 

@@ -191,10 +191,18 @@ Phase 7I — elevator descent transition: between floors (after a NON-final floo
 subtle vertical `PlayDescentCue` while the floor indicator updates, then the doors open and only
 THEN `BeginObservationThenTrial` runs. The clue board reveal moved from `BeginFloor` to the start of
 the observation pass (so it stays hidden during the transition). Timing is plain serialized fields
-(`floorClearedHoldSeconds`/`doorCloseSeconds`/`descentHoldSeconds`/`doorOpenSeconds`, ~3.8s total)
-plus pure `ElevatorTransitionTiming`; gating is pure `ElevatorTransitionState`. The transition only
-runs on `TrialResolution.FloorCleared` (non-final), never on `Escaped`. UI-only prototype: no door
-models, no Cinemachine, no new package, no `Game.unity` edit.
+(`floorClearedHoldSeconds`/`doorCloseSeconds`/`descentHoldSeconds`/`doorOpenSeconds`) plus pure
+`ElevatorTransitionTiming`; gating is pure `ElevatorTransitionState`. The transition only runs on
+`TrialResolution.FloorCleared` (non-final), never on `Escaped`. UI-only prototype: no door models,
+no Cinemachine, no new package, no `Game.unity` edit.
+
+Phase 7I playtest correction (door framing/timing adjustment): the transition is slower/heavier
+(doorClose 1.5s / descent 3.0s / doorOpen 1.5s, ~6.8s total, bounded <= 8s, still shorter than the
+observation pass), and the doors only cover the central corridor aperture instead of the full
+screen — `GameplayUIController.DoorApertureWidthRatio` (0.68) drives `SetElevatorDoorProgress`, so
+each leaf grows from its aperture edge to the centre when closing and collapses to zero width at the
+edge when open; the side cabin (buttons/walls) stays visible. The ratio is a public const, so the
+"doors are not full-screen" rule is unit-testable.
 
 Proposed MonoBehaviours (still planned — own NO trial/threat rules):
 

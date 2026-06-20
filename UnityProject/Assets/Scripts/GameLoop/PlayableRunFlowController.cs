@@ -35,14 +35,14 @@ namespace DontLetHerIn.GameLoop
         [Tooltip("Seconds the FLOOR CLEARED beat holds before the doors start closing.")]
         [SerializeField] private float floorClearedHoldSeconds = 0.8f;
 
-        [Tooltip("Seconds the elevator doors take to close.")]
-        [SerializeField] private float doorCloseSeconds = 0.8f;
+        [Tooltip("Seconds the elevator doors take to close (slower for a heavier descent).")]
+        [SerializeField] private float doorCloseSeconds = 1.5f;
 
         [Tooltip("Seconds the DESCENDING beat (with descent cue) holds, doors closed.")]
-        [SerializeField] private float descentHoldSeconds = 1.4f;
+        [SerializeField] private float descentHoldSeconds = 3.0f;
 
-        [Tooltip("Seconds the elevator doors take to open onto the next floor.")]
-        [SerializeField] private float doorOpenSeconds = 0.8f;
+        [Tooltip("Seconds the elevator doors take to open onto the next floor (slower).")]
+        [SerializeField] private float doorOpenSeconds = 1.5f;
 
         [Header("Observation pass (Phase 7H + 7H.1 tuning)")]
         [Tooltip("Optional. Falls back to Camera.main, then the first Camera found in the scene.")]

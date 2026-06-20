@@ -22,6 +22,13 @@ namespace DontLetHerIn.UI
     {
         public const int AnswerButtonCount = 4;
 
+        /// <summary>
+        /// Phase 7I door framing adjustment: the elevator doors only cover this central
+        /// fraction of the screen width (the corridor "aperture"), leaving the side cabin
+        /// (buttons/walls) visible. Must stay below 1.0 so the doors are not full-screen.
+        /// </summary>
+        public const float DoorApertureWidthRatio = 0.68f;
+
         // Portrait reference resolution (iPhone-like tall canvas).
         private static readonly Vector2 ReferenceResolution = new Vector2(1080f, 1920f);
 
@@ -367,25 +374,30 @@ namespace DontLetHerIn.UI
         public bool AreElevatorDoorsVisible => _elevatorDoorsRoot != null && _elevatorDoorsRoot.activeSelf;
 
         /// <summary>
-        /// Set how closed the elevator doors are: 0 = fully open (panels off the side edges),
-        /// 1 = fully closed (panels meet at the centre). Values are clamped to [0, 1].
+        /// Set how closed the elevator doors are: 0 = fully open (the aperture is clear and the
+        /// doors have zero width), 1 = fully closed (the two leaves meet at the centre of the
+        /// aperture). The doors only ever cover the central <see cref="DoorApertureWidthRatio"/>
+        /// of the screen, so the side cabin (buttons/walls) stays visible. Clamped to [0, 1].
         /// </summary>
         public void SetElevatorDoorProgress(float progress)
         {
             float p = Mathf.Clamp01(progress);
+            float apertureLeft = 0.5f - DoorApertureWidthRatio * 0.5f;
+            float apertureRight = 0.5f + DoorApertureWidthRatio * 0.5f;
+
             if (_leftDoor != null)
             {
-                // Closed: x in [0, 0.5]; Open: x in [-0.5, 0] (slid off the left edge).
-                _leftDoor.anchorMin = new Vector2((p - 1f) * 0.5f, 0f);
-                _leftDoor.anchorMax = new Vector2(p * 0.5f, 1f);
+                // Anchored at the aperture's left edge; grows rightward to the centre as it closes.
+                _leftDoor.anchorMin = new Vector2(apertureLeft, 0f);
+                _leftDoor.anchorMax = new Vector2(apertureLeft + (0.5f - apertureLeft) * p, 1f);
                 _leftDoor.offsetMin = Vector2.zero;
                 _leftDoor.offsetMax = Vector2.zero;
             }
             if (_rightDoor != null)
             {
-                // Closed: x in [0.5, 1]; Open: x in [1, 1.5] (slid off the right edge).
-                _rightDoor.anchorMin = new Vector2(1f - p * 0.5f, 0f);
-                _rightDoor.anchorMax = new Vector2(1f + (1f - p) * 0.5f, 1f);
+                // Anchored at the aperture's right edge; grows leftward to the centre as it closes.
+                _rightDoor.anchorMin = new Vector2(apertureRight - (apertureRight - 0.5f) * p, 0f);
+                _rightDoor.anchorMax = new Vector2(apertureRight, 1f);
                 _rightDoor.offsetMin = Vector2.zero;
                 _rightDoor.offsetMax = Vector2.zero;
             }
@@ -828,26 +840,31 @@ namespace DontLetHerIn.UI
             _observationSubtitle.color = TextColor;
             _observationPanel.SetActive(false);
 
-            // ---- ELEVATOR DOORS OVERLAY (Phase 7I) ----
+            // ---- ELEVATOR DOORS OVERLAY (Phase 7I, framing adjustment) ----
             // Two opaque dark full-height panels acting as prototype elevator doors, built last
-            // so they sit on top of the whole HUD. Closed = the two panels meet at the centre;
-            // open = they slide off the left/right edges. The descent text is drawn on top of the
-            // doors. Starts hidden; driven by SetElevatorDoorProgress / ShowElevatorDoors.
+            // so they sit on top of the HUD. They only cover the central corridor "aperture"
+            // (DoorApertureWidthRatio of the width), so the side cabin (buttons/walls) stays
+            // visible — keeping the in-elevator feel. Closed = the two leaves meet at the aperture
+            // centre; open = zero width at the aperture edges. The descent text is centred inside
+            // the aperture. Starts hidden; driven by SetElevatorDoorProgress / ShowElevatorDoors.
+            float apertureLeft = 0.5f - DoorApertureWidthRatio * 0.5f;
+            float apertureRight = 0.5f + DoorApertureWidthRatio * 0.5f;
+
             _elevatorDoorsRoot = CreateContainer("ElevatorDoorsRoot", root);
             var doorsRoot = (RectTransform)_elevatorDoorsRoot.transform;
 
-            _leftDoor = CreatePanel("LeftDoor", doorsRoot, DoorColor, new Vector2(0f, 0f), new Vector2(0.5f, 1f));
-            _rightDoor = CreatePanel("RightDoor", doorsRoot, DoorColor, new Vector2(0.5f, 0f), new Vector2(1f, 1f));
+            _leftDoor = CreatePanel("LeftDoor", doorsRoot, DoorColor, new Vector2(apertureLeft, 0f), new Vector2(0.5f, 1f));
+            _rightDoor = CreatePanel("RightDoor", doorsRoot, DoorColor, new Vector2(0.5f, 0f), new Vector2(apertureRight, 1f));
             // Faint seam accents on the inner edges so the closed doors read as two leaves.
-            CreatePanel("LeftDoorSeam", _leftDoor, DoorSeamColor, new Vector2(0.985f, 0f), new Vector2(1f, 1f));
-            CreatePanel("RightDoorSeam", _rightDoor, DoorSeamColor, new Vector2(0f, 0f), new Vector2(0.015f, 1f));
+            CreatePanel("LeftDoorSeam", _leftDoor, DoorSeamColor, new Vector2(0.97f, 0f), new Vector2(1f, 1f));
+            CreatePanel("RightDoorSeam", _rightDoor, DoorSeamColor, new Vector2(0f, 0f), new Vector2(0.03f, 1f));
 
-            _descentTitle = CreateText("DescentTitle", doorsRoot, string.Empty, 60, TextAnchor.MiddleCenter,
-                new Vector2(0.05f, 0.52f), new Vector2(0.95f, 0.66f));
+            _descentTitle = CreateText("DescentTitle", doorsRoot, string.Empty, 56, TextAnchor.MiddleCenter,
+                new Vector2(apertureLeft + 0.02f, 0.52f), new Vector2(apertureRight - 0.02f, 0.66f));
             _descentTitle.fontStyle = FontStyle.Bold;
             _descentTitle.color = TextColor;
-            _descentSubtitle = CreateText("DescentSubtitle", doorsRoot, string.Empty, 44, TextAnchor.MiddleCenter,
-                new Vector2(0.05f, 0.40f), new Vector2(0.95f, 0.50f));
+            _descentSubtitle = CreateText("DescentSubtitle", doorsRoot, string.Empty, 42, TextAnchor.MiddleCenter,
+                new Vector2(apertureLeft + 0.02f, 0.40f), new Vector2(apertureRight - 0.02f, 0.50f));
             _descentSubtitle.color = WarnColor;
             _descentSubtitle.fontStyle = FontStyle.Bold;
 
