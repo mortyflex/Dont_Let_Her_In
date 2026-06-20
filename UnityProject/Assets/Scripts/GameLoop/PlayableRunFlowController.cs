@@ -31,15 +31,18 @@ namespace DontLetHerIn.GameLoop
         [Tooltip("Extra seconds added after a wrong answer or timeout so the danger has time to register.")]
         [SerializeField] private float dangerHoldExtraSeconds = 0.3f;
 
-        [Header("Inter-floor transition (Phase 7B)")]
-        [Tooltip("Seconds the FLOOR CLEARED message holds when a non-final floor is cleared.")]
-        [SerializeField] private float floorClearedHoldSeconds = 0.7f;
+        [Header("Elevator descent transition (Phase 7I)")]
+        [Tooltip("Seconds the FLOOR CLEARED beat holds before the doors start closing.")]
+        [SerializeField] private float floorClearedHoldSeconds = 0.8f;
 
-        [Tooltip("Seconds the DOORS CLOSING message holds during the inter-floor transition.")]
-        [SerializeField] private float doorsClosingHoldSeconds = 0.7f;
+        [Tooltip("Seconds the elevator doors take to close.")]
+        [SerializeField] private float doorCloseSeconds = 0.8f;
 
-        [Tooltip("Seconds the ASCENDING message holds before the next floor starts.")]
-        [SerializeField] private float ascendingHoldSeconds = 0.8f;
+        [Tooltip("Seconds the DESCENDING beat (with descent cue) holds, doors closed.")]
+        [SerializeField] private float descentHoldSeconds = 1.4f;
+
+        [Tooltip("Seconds the elevator doors take to open onto the next floor.")]
+        [SerializeField] private float doorOpenSeconds = 0.8f;
 
         [Header("Observation pass (Phase 7H + 7H.1 tuning)")]
         [Tooltip("Optional. Falls back to Camera.main, then the first Camera found in the scene.")]
@@ -75,6 +78,10 @@ namespace DontLetHerIn.GameLoop
         private Vector3 _cameraHomePosition;
         private Quaternion _cameraHomeRotation;
 
+        // Phase 7I elevator descent transition state.
+        private ElevatorTransitionTiming _transitionTiming;
+        private readonly ElevatorTransitionState _transition = new ElevatorTransitionState();
+
         private void Awake()
         {
             if (ui == null)
@@ -99,6 +106,8 @@ namespace DontLetHerIn.GameLoop
 
             _observationTiming = new ObservationPassTiming(
                 observationHoldSeconds, cameraMoveSeconds, cameraReturnSeconds);
+            _transitionTiming = new ElevatorTransitionTiming(
+                floorClearedHoldSeconds, doorCloseSeconds, descentHoldSeconds, doorOpenSeconds);
         }
 
         private void Start()
@@ -211,6 +220,7 @@ namespace DontLetHerIn.GameLoop
         {
             StopAdvanceRoutine();
             StopObservationRoutine();
+            ResetTransitionVisuals(); // Phase 7I: never start a run mid-transition (doors/creature)
             _run.StartRun();
             _progress.Reset();
             if (ui != null) ui.ShowGameplay();
@@ -230,9 +240,9 @@ namespace DontLetHerIn.GameLoop
             UpdateCreature();
             RefreshThreatHud();
 
-            // Phase 7G: show this floor's static corridor clues (evidence bridge). Pure
-            // display only — the playable trials still come from PrototypeFloorSet.
-            if (ui != null) ui.UpdateClues(displayFloor);
+            // Phase 7I: the clue board is no longer revealed here — it is revealed at the start
+            // of the observation pass (see ObserveThenStartTrial) so it stays hidden during the
+            // elevator descent transition and during questions (observation-only clue board).
         }
 
         private void StartCurrentTrial()
@@ -350,51 +360,95 @@ namespace DontLetHerIn.GameLoop
         }
 
         /// <summary>
-        /// After a non-final floor is fully cleared: hold on the answer outcome (Phase 7
-        /// pacing), then play a short UI-only elevator transition (FLOOR CLEARED -> DOORS
-        /// CLOSING -> DESCENDING) framing the descent, then start the next lower floor's
-        /// first trial. Progress already points at the next floor. Danger is paused during
-        /// the transition: no threat/creature change is applied here.
+        /// After a NON-final floor is fully cleared (Phase 7I): hold on the answer outcome
+        /// (Phase 7 pacing), then play the prototype elevator descent transition — FLOOR CLEARED,
+        /// doors close, DESCENDING (with a subtle descent cue while the floor indicator updates),
+        /// doors open — and only then start the next lower floor's observation pass. Progress
+        /// already points at the next floor. During the whole transition the creature is hidden,
+        /// the clue board stays hidden, and no threat/timer/answer activity happens. The final
+        /// Floor 1 escape never reaches here (it shows the result instead), so no transition runs
+        /// after the escape.
         /// </summary>
         private IEnumerator ClearFloorThenAdvance(float outcomeHold)
         {
             yield return new WaitForSeconds(outcomeHold);
             if (!_run.IsRunning) { _advanceRoutine = null; yield break; }
 
+            _transition.Begin(); // DoorsClosing
+
+            // Hide the trial HUD and the clue board; keep the creature hidden for the whole transition.
             if (ui != null)
             {
-                ui.BeginFloorTransition();
-                ui.ShowFloorTransition(PrototypeLocalization.Current(PrototypeLocalization.FloorCleared), string.Empty);
+                ui.HideTrialHudForTransition();
+                ui.HideClues();
             }
-            yield return new WaitForSeconds(floorClearedHoldSeconds);
+            if (creature != null) creature.SetObservationHidden(true);
 
+            // FLOOR CLEARED beat, doors still open.
             if (ui != null)
             {
-                ui.ShowFloorTransition(PrototypeLocalization.Current(PrototypeLocalization.DoorsClosing), string.Empty);
+                ui.ShowElevatorDoors(true);
+                ui.SetElevatorDoorProgress(0f); // open
+                ui.SetDescentMessage(PrototypeLocalization.Current(PrototypeLocalization.FloorCleared), string.Empty);
             }
-            yield return new WaitForSeconds(doorsClosingHoldSeconds);
+            yield return new WaitForSeconds(_transitionTiming.FloorClearedHoldSeconds);
 
-            // New floor = fresh danger cycle: reset threat to this lower floor's start
-            // distance (creature + HUD refresh). Done during the descent.
+            // DOORS CLOSING: animate the doors from open (0) to closed (1).
+            if (ui != null) ui.SetDescentMessage(PrototypeLocalization.Current(PrototypeLocalization.DoorsClosing), string.Empty);
+            yield return AnimateDoors(0f, 1f, _transitionTiming.DoorCloseSeconds);
+
+            // New floor = fresh danger cycle: reset threat to this lower floor's start distance
+            // (creature stays hidden via the mask, clue board not revealed here). Update the floor
+            // indicator while the doors are closed.
+            _transition.EnterDescending();
             BeginFloor();
-
+            int displayFloor = DescentFloorProfile.DisplayFloorNumber(_progress.CurrentFloorIndex, _progress.FloorCount);
             if (ui != null)
             {
-                // Reveal the floor we are descending to (and its first trial).
-                int displayFloor = DescentFloorProfile.DisplayFloorNumber(_progress.CurrentFloorIndex, _progress.FloorCount);
                 ui.UpdateProgress(displayFloor, _progress.CurrentTrialNumber, _progress.TrialsInCurrentFloor);
-                ui.ShowFloorTransition(PrototypeLocalization.Current(PrototypeLocalization.Descending),
+                ui.SetDescentMessage(PrototypeLocalization.Current(PrototypeLocalization.Descending),
                     PrototypeLocalization.FloorLabel(displayFloor));
+                ui.PlayDescentCue(_transitionTiming.DescentHoldSeconds); // subtle vertical cue, doors closed
             }
-            yield return new WaitForSeconds(ascendingHoldSeconds);
+            yield return new WaitForSeconds(_transitionTiming.DescentHoldSeconds);
 
-            if (ui != null) ui.HideFloorTransition();
+            // DOORS OPENING: animate the doors from closed (1) back to open (0).
+            _transition.BeginOpening();
+            if (ui != null) ui.SetDescentMessage(PrototypeLocalization.Current(PrototypeLocalization.DoorsOpening),
+                PrototypeLocalization.FloorLabel(displayFloor));
+            yield return AnimateDoors(1f, 0f, _transitionTiming.DoorOpenSeconds);
+
+            if (ui != null) ui.HideElevatorDoors();
+            _transition.Complete();
 
             _advanceRoutine = null;
             if (_run.IsRunning)
             {
-                BeginObservationThenTrial(); // Phase 7H: observe before the new floor's first trial
+                // Observation starts ONLY after the doors have opened.
+                BeginObservationThenTrial();
             }
+        }
+
+        /// <summary>Animate the elevator doors between two progress values (0 open, 1 closed).</summary>
+        private IEnumerator AnimateDoors(float from, float to, float seconds)
+        {
+            if (ui == null || seconds <= 0f)
+            {
+                if (ui != null) ui.SetElevatorDoorProgress(to);
+                if (seconds > 0f) yield return new WaitForSeconds(seconds);
+                yield break;
+            }
+
+            float elapsed = 0f;
+            while (elapsed < seconds)
+            {
+                elapsed += Time.deltaTime;
+                float k = Mathf.Clamp01(elapsed / seconds);
+                k = k * k * (3f - 2f * k); // smoothstep ease
+                ui.SetElevatorDoorProgress(Mathf.Lerp(from, to, k));
+                yield return null;
+            }
+            ui.SetElevatorDoorProgress(to);
         }
 
         private void StopAdvanceRoutine()
@@ -425,6 +479,10 @@ namespace DontLetHerIn.GameLoop
             _observation.Begin();
             if (ui != null)
             {
+                // Phase 7I: reveal this floor's clue board now (observation-only). It was kept
+                // hidden during the elevator descent transition; StartCurrentTrial hides it again.
+                int displayFloor = DescentFloorProfile.DisplayFloorNumber(_progress.CurrentFloorIndex, _progress.FloorCount);
+                ui.UpdateClues(displayFloor);
                 ui.PrepareObservation();   // hide question/answers/cue/status, keep clue board
                 ui.ShowObservationHint();  // localized OBSERVE THE CORRIDOR overlay
             }
@@ -518,6 +576,18 @@ namespace DontLetHerIn.GameLoop
             }
         }
 
+        /// <summary>
+        /// Phase 7I: clear any in-progress elevator transition visuals (doors overlay + state)
+        /// and restore creature visibility, so a restart/new run never starts mid-transition.
+        /// Safe to call when no transition is running.
+        /// </summary>
+        private void ResetTransitionVisuals()
+        {
+            if (_transition.IsActive && creature != null) creature.SetObservationHidden(false);
+            _transition.Reset();
+            if (ui != null) ui.HideElevatorDoors();
+        }
+
         // ---- View helpers --------------------------------------------------
 
         private void ShowCue(QuestionCue cue)
@@ -556,6 +626,7 @@ namespace DontLetHerIn.GameLoop
         {
             StopAdvanceRoutine();
             StopObservationRoutine();
+            ResetTransitionVisuals(); // Phase 7I: clear any door overlay before the result screen
             if (ui == null) return;
 
             var result = _run.BuildResult();

@@ -272,6 +272,37 @@ visible at any point during the observation.
 
 ---
 
+## 3H. Phase 7I Checklist — Elevator Descent Transition
+
+Phase 7I adds a prototype elevator descent transition between floors (UI doors, not final art).
+Items unchecked; run in Game view portrait (e.g. 1080x1920).
+
+```txt
+[ ] BEGIN DESCENT; Floor 5 observation works as validated (clue board only during observation).
+[ ] Answer the 5 Floor 5 trials so the floor is cleared.
+[ ] On floor clear the question/answers disappear and the clue board is hidden.
+[ ] FLOOR CLEARED shows, then two dark elevator doors CLOSE over the screen.
+[ ] DESCENDING shows with a subtle vertical descent cue (text shake), doors closed.
+[ ] The creature is NOT visible at any point during the transition.
+[ ] The floor indicator updates to the next floor while the doors are closed.
+[ ] The doors OPEN again (DOORS OPENING).
+[ ] Floor 4 observation pass starts ONLY after the doors have opened.
+[ ] Floor 4 clue board appears during observation, then hides when the first question starts.
+[ ] No clue board and no observation appear before the doors open.
+[ ] The transition is clearly shorter than the observation pass (~3.5-4.5s).
+[ ] Repeat down the floors; completing Floor 1 ESCAPES (ground floor result) with NO new
+    descent transition afterwards.
+[ ] Restart works and the doors never start a run already closed.
+[ ] French: ÉTAGE FRANCHI / PORTES EN FERMETURE / DESCENTE / PORTES EN OUVERTURE / ÉTAGE 4.
+[ ] No red Console errors.
+```
+
+Note: doors are prototype UI panels (no models). Report if the doors get stuck, if the creature or
+clue board appears during the transition, if observation starts before the doors open, or if a
+descent transition runs after the final Floor 1 escape.
+
+---
+
 ## 4. Manual Playtest Checklist
 
 For every playable build, test:

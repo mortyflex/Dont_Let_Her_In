@@ -58,6 +58,10 @@ GameLoop/ObservationPassTiming.cs      - Pure Phase 7H timing (observe hold / ca
                                          camera return seconds; clamps, total, all-positive).
 GameLoop/ObservationPassState.cs       - Pure Phase 7H state guard: gates answers/timer while
                                          observing, blocks duplicate Begin, re-arms on restart.
+GameLoop/ElevatorTransitionTiming.cs   - Pure Phase 7I timing (floor-cleared hold / door close /
+                                         descent hold / door open; total, all-positive).
+GameLoop/ElevatorTransitionState.cs    - Pure Phase 7I state guard: door/descent phase; gates
+                                         answers/timer/clue-board/creature while the transition runs.
 GameLoop/PrototypeLocalization.cs      - Central EN/FR string registry + current language.
 GameLoop/LocalizedText.cs              - Small (english, french) pair with Get(language).
 GameLoop/GameLanguage.cs               - enum { English, French }.
@@ -179,6 +183,18 @@ does not serialize these, so no `Game.unity` edit). The static clue board is now
 `StartCurrentTrial`) hides it when the first question starts, so the player answers from memory.
 The rule is expressed purely as `ObservationPassState.CluesVisible` (visible only while observing);
 `GameplayUIController.AreCluesVisible` exposes the live state for inspection.
+
+Phase 7I — elevator descent transition: between floors (after a NON-final floor clears), the
+`ClearFloorThenAdvance` coroutine plays a prototype elevator descent: `HideTrialHudForTransition()`
++ `HideClues()`, the creature is masked (`SetObservationHidden(true)`), then two opaque UI doors
+(`ShowElevatorDoors`/`SetElevatorDoorProgress` 0 open..1 closed) close, DESCENDING plays with a
+subtle vertical `PlayDescentCue` while the floor indicator updates, then the doors open and only
+THEN `BeginObservationThenTrial` runs. The clue board reveal moved from `BeginFloor` to the start of
+the observation pass (so it stays hidden during the transition). Timing is plain serialized fields
+(`floorClearedHoldSeconds`/`doorCloseSeconds`/`descentHoldSeconds`/`doorOpenSeconds`, ~3.8s total)
+plus pure `ElevatorTransitionTiming`; gating is pure `ElevatorTransitionState`. The transition only
+runs on `TrialResolution.FloorCleared` (non-final), never on `Escaped`. UI-only prototype: no door
+models, no Cinemachine, no new package, no `Game.unity` edit.
 
 Proposed MonoBehaviours (still planned — own NO trial/threat rules):
 

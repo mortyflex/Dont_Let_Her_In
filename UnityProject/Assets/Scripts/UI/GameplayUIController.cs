@@ -48,6 +48,10 @@ namespace DontLetHerIn.UI
         private static readonly Color DangerOverlayColor = new Color(0.45f, 0f, 0f, 1f);
         private static readonly Color LossPanelColor = new Color(0.18f, 0.01f, 0.01f, 0.90f);
 
+        // Phase 7I: opaque dark elevator doors (prototype, not final art) with a faint seam accent.
+        private static readonly Color DoorColor = new Color(0.05f, 0.05f, 0.06f, 1f);
+        private static readonly Color DoorSeamColor = new Color(0.18f, 0.18f, 0.20f, 1f);
+
         /// <summary>Raised when the player presses Start.</summary>
         public event Action StartClicked;
 
@@ -85,6 +89,14 @@ namespace DontLetHerIn.UI
         private GameObject _observationPanel;
         private Text _observationTitle;
         private Text _observationSubtitle;
+
+        // Phase 7I: prototype elevator doors (two dark UI panels) + descent text.
+        private GameObject _elevatorDoorsRoot;
+        private RectTransform _leftDoor;
+        private RectTransform _rightDoor;
+        private Text _descentTitle;
+        private Text _descentSubtitle;
+        private Coroutine _descentCueRoutine;
 
         private Text _startTitleText;
         private Text _introBodyText;
@@ -153,6 +165,7 @@ namespace DontLetHerIn.UI
             _gameplayRoot.SetActive(true);
             _resultPanel.SetActive(false);
             HideFloorTransition();
+            HideElevatorDoors(); // Phase 7I: never start a run with the doors overlay showing
             SetStatus(string.Empty, TextColor);
             ResetFeedback();
         }
@@ -307,6 +320,113 @@ namespace DontLetHerIn.UI
         {
             if (_observationPanel != null) _observationPanel.SetActive(false);
             if (_questionPanel != null) _questionPanel.SetActive(true);
+        }
+
+        // ---- Elevator descent transition (Phase 7I) -----------------------
+
+        /// <summary>
+        /// Hide the trial HUD (question, answers, cue, status, proximity) for the descent
+        /// transition, WITHOUT showing the lower floor-transition band: the opaque elevator
+        /// doors cover the screen instead. The clue board is hidden separately via HideClues.
+        /// </summary>
+        public void HideTrialHudForTransition()
+        {
+            if (_questionPanel != null) _questionPanel.SetActive(false);
+            HideCue();
+            for (int i = 0; i < AnswerButtonCount; i++)
+            {
+                if (_answerButtons[i] != null) _answerButtons[i].gameObject.SetActive(false);
+            }
+            SetStatus(string.Empty, TextColor);
+            if (_proximityText != null) _proximityText.text = string.Empty;
+            if (_floorTransitionPanel != null) _floorTransitionPanel.SetActive(false);
+        }
+
+        /// <summary>Show or hide the elevator doors overlay. Showing resets the descent shake.</summary>
+        public void ShowElevatorDoors(bool active)
+        {
+            if (_elevatorDoorsRoot == null) return;
+            if (!active)
+            {
+                HideElevatorDoors();
+                return;
+            }
+            _elevatorDoorsRoot.SetActive(true);
+        }
+
+        /// <summary>Hide the elevator doors overlay and stop any descent cue.</summary>
+        public void HideElevatorDoors()
+        {
+            if (_descentCueRoutine != null) { StopCoroutine(_descentCueRoutine); _descentCueRoutine = null; }
+            if (_descentTitle != null) _descentTitle.rectTransform.localPosition = Vector3.zero;
+            if (_descentSubtitle != null) _descentSubtitle.rectTransform.localPosition = Vector3.zero;
+            if (_elevatorDoorsRoot != null) _elevatorDoorsRoot.SetActive(false);
+        }
+
+        /// <summary>True while the elevator doors overlay is shown.</summary>
+        public bool AreElevatorDoorsVisible => _elevatorDoorsRoot != null && _elevatorDoorsRoot.activeSelf;
+
+        /// <summary>
+        /// Set how closed the elevator doors are: 0 = fully open (panels off the side edges),
+        /// 1 = fully closed (panels meet at the centre). Values are clamped to [0, 1].
+        /// </summary>
+        public void SetElevatorDoorProgress(float progress)
+        {
+            float p = Mathf.Clamp01(progress);
+            if (_leftDoor != null)
+            {
+                // Closed: x in [0, 0.5]; Open: x in [-0.5, 0] (slid off the left edge).
+                _leftDoor.anchorMin = new Vector2((p - 1f) * 0.5f, 0f);
+                _leftDoor.anchorMax = new Vector2(p * 0.5f, 1f);
+                _leftDoor.offsetMin = Vector2.zero;
+                _leftDoor.offsetMax = Vector2.zero;
+            }
+            if (_rightDoor != null)
+            {
+                // Closed: x in [0.5, 1]; Open: x in [1, 1.5] (slid off the right edge).
+                _rightDoor.anchorMin = new Vector2(1f - p * 0.5f, 0f);
+                _rightDoor.anchorMax = new Vector2(1f + (1f - p) * 0.5f, 1f);
+                _rightDoor.offsetMin = Vector2.zero;
+                _rightDoor.offsetMax = Vector2.zero;
+            }
+        }
+
+        /// <summary>Set the descent overlay text (e.g. DESCENDING + FLOOR 4). Null clears a line.</summary>
+        public void SetDescentMessage(string title, string subtitle)
+        {
+            if (_descentTitle != null) _descentTitle.text = title ?? string.Empty;
+            if (_descentSubtitle != null) _descentSubtitle.text = subtitle ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Play a short, subtle vertical "descent" shake on the descent text for the given
+        /// duration (a damped sine), so the closed elevator reads as moving. Mobile-safe and
+        /// small; never touches the observation camera. Safe to call repeatedly.
+        /// </summary>
+        public void PlayDescentCue(float seconds)
+        {
+            if (_descentTitle == null) return;
+            if (_descentCueRoutine != null) StopCoroutine(_descentCueRoutine);
+            _descentCueRoutine = StartCoroutine(DescentCueRoutine(seconds));
+        }
+
+        private System.Collections.IEnumerator DescentCueRoutine(float seconds)
+        {
+            const float amplitude = 14f;   // canvas units (reference height 1920) — subtle.
+            const float frequency = 6f;    // oscillations per second.
+            float t = 0f;
+            while (t < seconds)
+            {
+                t += Time.unscaledDeltaTime;
+                float damp = seconds > 0f ? 1f - Mathf.Clamp01(t / seconds) : 0f;
+                float y = Mathf.Sin(t * frequency * Mathf.PI * 2f) * amplitude * damp;
+                if (_descentTitle != null) _descentTitle.rectTransform.localPosition = new Vector3(0f, y, 0f);
+                if (_descentSubtitle != null) _descentSubtitle.rectTransform.localPosition = new Vector3(0f, y, 0f);
+                yield return null;
+            }
+            if (_descentTitle != null) _descentTitle.rectTransform.localPosition = Vector3.zero;
+            if (_descentSubtitle != null) _descentSubtitle.rectTransform.localPosition = Vector3.zero;
+            _descentCueRoutine = null;
         }
 
         private static string FormatCueLines(QuestionCue cue)
@@ -707,6 +827,31 @@ namespace DontLetHerIn.UI
                 TextAnchor.MiddleCenter, new Vector2(0.06f, 0.10f), new Vector2(0.94f, 0.50f));
             _observationSubtitle.color = TextColor;
             _observationPanel.SetActive(false);
+
+            // ---- ELEVATOR DOORS OVERLAY (Phase 7I) ----
+            // Two opaque dark full-height panels acting as prototype elevator doors, built last
+            // so they sit on top of the whole HUD. Closed = the two panels meet at the centre;
+            // open = they slide off the left/right edges. The descent text is drawn on top of the
+            // doors. Starts hidden; driven by SetElevatorDoorProgress / ShowElevatorDoors.
+            _elevatorDoorsRoot = CreateContainer("ElevatorDoorsRoot", root);
+            var doorsRoot = (RectTransform)_elevatorDoorsRoot.transform;
+
+            _leftDoor = CreatePanel("LeftDoor", doorsRoot, DoorColor, new Vector2(0f, 0f), new Vector2(0.5f, 1f));
+            _rightDoor = CreatePanel("RightDoor", doorsRoot, DoorColor, new Vector2(0.5f, 0f), new Vector2(1f, 1f));
+            // Faint seam accents on the inner edges so the closed doors read as two leaves.
+            CreatePanel("LeftDoorSeam", _leftDoor, DoorSeamColor, new Vector2(0.985f, 0f), new Vector2(1f, 1f));
+            CreatePanel("RightDoorSeam", _rightDoor, DoorSeamColor, new Vector2(0f, 0f), new Vector2(0.015f, 1f));
+
+            _descentTitle = CreateText("DescentTitle", doorsRoot, string.Empty, 60, TextAnchor.MiddleCenter,
+                new Vector2(0.05f, 0.52f), new Vector2(0.95f, 0.66f));
+            _descentTitle.fontStyle = FontStyle.Bold;
+            _descentTitle.color = TextColor;
+            _descentSubtitle = CreateText("DescentSubtitle", doorsRoot, string.Empty, 44, TextAnchor.MiddleCenter,
+                new Vector2(0.05f, 0.40f), new Vector2(0.95f, 0.50f));
+            _descentSubtitle.color = WarnColor;
+            _descentSubtitle.fontStyle = FontStyle.Bold;
+
+            _elevatorDoorsRoot.SetActive(false);
         }
 
         private void BuildStartPanel(RectTransform parent)

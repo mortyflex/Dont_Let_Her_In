@@ -1062,6 +1062,52 @@ Accepted
 
 ---
 
+## 2026-06-20 — Prototype elevator descent transition between floors (Phase 7I)
+
+### Decision
+
+Between floors, after a NON-final floor is cleared, the game plays a prototype elevator descent
+transition: hide the trial HUD and clue board, close two dark UI "doors", show DESCENDING with a
+subtle vertical descent cue while the floor indicator updates, then open the doors and only then
+start the next floor's observation pass. Timing ~0.8/0.8/1.4/0.8s (~3.8s, shorter than the
+observation pass). The creature and clue board stay hidden for the whole transition. The final
+Floor 1 escape shows the result instead and never runs a transition.
+
+### Context
+
+The descent previously only showed FLOOR CLEARED / DOORS CLOSING / DESCENDING text in a lower band.
+It did not read as an elevator descending. Phase 7I adds a real door close/open + descent feel
+without final art or scene changes, between the validated observation passes.
+
+### Reasoning
+
+UI overlay doors are the lowest-risk option: no `Game.unity` edit, no door models, no Cinemachine,
+mobile-portrait friendly. The doors are two opaque panels driven by a 0..1 progress (open..closed);
+the descent cue is a small damped vertical shake on the descent text (it never touches the
+observation camera). Timing/distance live in plain serialized fields (scene does not serialize
+them) plus a pure `ElevatorTransitionTiming`; gating is a pure `ElevatorTransitionState`
+(answers/timer off, clue board hidden, creature hidden while active) mirroring the observation
+state classes, so it is fully EditMode-testable. The clue board reveal moved from `BeginFloor` to
+the start of the observation pass, so it is hidden during the transition and only shown during
+observation (still observation-only). The transition only runs on `TrialResolution.FloorCleared`
+(non-final), never on `Escaped`, so there is no transition after the final escape.
+
+### Consequences
+
+- `Game.unity` is unchanged; doors/cue are built in code in the runtime HUD.
+- Observation starts ONLY after the doors open; clue board and creature stay hidden during descent.
+- The old Phase 7B inter-floor text-band fields (`doorsClosingHoldSeconds`, `ascendingHoldSeconds`)
+  are replaced by Phase 7I door fields (`doorCloseSeconds`, `descentHoldSeconds`, `doorOpenSeconds`).
+- Descent loop, threat/clue/creature rules, restart and EN/FR localization are unchanged.
+- Door/cue are prototype visuals; final door art, audio and richer descent feel remain future work.
+  New localized DOORS OPENING / PORTES EN OUVERTURE; other beats reuse existing labels. EditMode tests: 251.
+
+### Status
+
+Accepted
+
+---
+
 ## 4. Replaced or Deprecated Decisions
 
 - **Door Seal scoring (Phase 7B.3)** — completed as an experiment, then removed from active

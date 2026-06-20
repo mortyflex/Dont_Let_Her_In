@@ -1034,11 +1034,20 @@ Phase 7H.1 tunes the observation pass from user playtest feedback, then was corr
   the player answers from memory), and the creature is hidden for the whole observation travel and
   only re-appears (per threat state) once the answer phase starts. No scene edit (fields use C#
   initializers). EditMode tests: 233/233 passing.
+Phase 7I adds a prototype elevator descent transition between floors: after a NON-final floor is
+  cleared, the trial HUD/clue board hide, two dark UI "doors" close, DESCENDING plays with a subtle
+  vertical descent cue while the floor indicator updates, then the doors open and only THEN the next
+  floor's observation pass starts. Timing ~0.8/0.8/1.4/0.8s (~3.8s total, shorter than observation).
+  The creature stays hidden and the clue board stays hidden for the whole transition; the clue board
+  is now revealed at observation start (not at BeginFloor). No transition after the final Floor 1
+  escape. UI-only prototype (no door models, no Cinemachine, no scene edit). New localized DOORS
+  OPENING / PORTES EN OUVERTURE; FLOOR CLEARED / DOORS CLOSING / DESCENDING / FLOOR {n} reused.
+  EditMode tests: 251/251 passing.
 No iOS build yet.
 ```
 
 Next planned step:
 
 ```txt
-Phase 7I — Observation/evidence handoff and PlayMode coverage (recommended)
+Phase 7J — Descent transition polish / audio + PlayMode coverage (recommended)
 ```

@@ -43,6 +43,10 @@ namespace DontLetHerIn.GameLoop
         public static readonly LocalizedText Descending =
             new LocalizedText("DESCENDING", "DESCENTE");
 
+        // ---- Elevator descent transition (Phase 7I) ----
+        public static readonly LocalizedText DoorsOpening =
+            new LocalizedText("DOORS OPENING", "PORTES EN OUVERTURE");
+
         public static readonly LocalizedText GroundFloor =
             new LocalizedText("GROUND FLOOR", "REZ-DE-CHAUSSÉE");
 

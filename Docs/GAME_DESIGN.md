@@ -39,8 +39,12 @@ A floor is a fresh danger cycle: when it starts, the threat is reset to that flo
 ```txt
 The displayed floor number counts DOWN: 5 -> 4 -> 3 -> 2 -> 1 -> Ground Floor.
 The deeper the descent, the closer the threat starts (less safety).
-After clearing a non-final floor: FLOOR CLEARED -> DOORS CLOSING -> DESCENDING -> next floor.
-After clearing Floor 1: GROUND FLOOR -> YOU ESCAPED.
+After clearing a non-final floor a prototype elevator descent transition plays (Phase 7I):
+  FLOOR CLEARED -> doors close -> DESCENDING (subtle vertical descent cue, floor indicator updates)
+  -> doors open -> the next floor's observation pass starts ONLY after the doors open.
+  The creature and the clue board stay hidden for the whole transition; it is shorter (~3.8s) than
+  the observation pass. The transition is a UI prototype (dark sliding panels), not final art.
+After clearing Floor 1: GROUND FLOOR -> YOU ESCAPED (no descent transition after the final escape).
 ```
 
 ### 0.4 Floor Structure
