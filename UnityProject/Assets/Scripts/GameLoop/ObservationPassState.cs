@@ -37,6 +37,13 @@ namespace DontLetHerIn.GameLoop
         public bool TimerAllowed => Phase != ObservationPhase.Observing;
 
         /// <summary>
+        /// Phase 7H.1 rule: the static corridor clue board is shown ONLY while observing, then
+        /// hidden once the trial starts so the player answers from memory. The question phase
+        /// never requires the clue board to be visible.
+        /// </summary>
+        public bool CluesVisible => Phase == ObservationPhase.Observing;
+
+        /// <summary>
         /// Enter the observing phase. Returns false (and changes nothing) if a pass is already
         /// running, so callers cannot start a duplicate observation.
         /// </summary>

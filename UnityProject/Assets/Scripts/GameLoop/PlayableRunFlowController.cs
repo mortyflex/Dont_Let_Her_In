@@ -41,24 +41,24 @@ namespace DontLetHerIn.GameLoop
         [Tooltip("Seconds the ASCENDING message holds before the next floor starts.")]
         [SerializeField] private float ascendingHoldSeconds = 0.8f;
 
-        [Header("Observation pass (Phase 7H)")]
+        [Header("Observation pass (Phase 7H / 7H.1 tuning)")]
         [Tooltip("Optional. Falls back to Camera.main, then the first Camera found in the scene.")]
         [SerializeField] private Camera observationCamera;
 
         [Tooltip("Seconds the OBSERVE THE CORRIDOR overlay holds before the first trial of a floor.")]
-        [SerializeField] private float observationHoldSeconds = 2.0f;
+        [SerializeField] private float observationHoldSeconds = 2.5f;
 
         [Tooltip("Seconds the camera eases toward the corridor at the start of the observation pass.")]
-        [SerializeField] private float cameraMoveSeconds = 0.6f;
+        [SerializeField] private float cameraMoveSeconds = 1.2f;
 
         [Tooltip("Seconds the camera takes to settle back to the gameplay pose before the trial.")]
-        [SerializeField] private float cameraReturnSeconds = 0.4f;
+        [SerializeField] private float cameraReturnSeconds = 0.7f;
 
-        [Tooltip("How far the camera eases toward the corridor during observation (metres). Keep subtle.")]
-        [SerializeField] private float observationForwardOffset = 0.2f;
+        [Tooltip("How far the camera travels toward the corridor / red light during observation (metres).")]
+        [SerializeField] private float observationForwardOffset = 1.5f;
 
-        [Tooltip("How much the camera rises during observation (metres). Keep subtle.")]
-        [SerializeField] private float observationHeightOffset = 0.05f;
+        [Tooltip("How much the camera rises during observation (metres). Keep small.")]
+        [SerializeField] private float observationHeightOffset = 0.1f;
 
         private RunController _run;
         private QuestionManager _questions;
@@ -245,6 +245,9 @@ namespace DontLetHerIn.GameLoop
             {
                 int displayFloor = DescentFloorProfile.DisplayFloorNumber(_progress.CurrentFloorIndex, _progress.FloorCount);
                 ui.UpdateProgress(displayFloor, _progress.CurrentTrialNumber, _progress.TrialsInCurrentFloor);
+                // Phase 7H.1: clues are observation-only. As soon as a question starts the clue
+                // board is hidden so the player answers from memory (ObservationPassState.CluesVisible).
+                ui.HideClues();
                 ui.ShowQuestion(question);
                 ShowCue(trial.Cue);
                 ui.SetAnswersInteractable(true);

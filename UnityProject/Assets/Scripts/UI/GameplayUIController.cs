@@ -383,6 +383,9 @@ namespace DontLetHerIn.UI
         /// Reads the evidence data via <see cref="CorridorClueDisplayFormatter"/> and the
         /// current <see cref="PrototypeLocalization.Language"/>. Hides the board when the
         /// floor has no clues (safe fallback). This is a prototype evidence bridge, not final UI.
+        ///
+        /// Phase 7H.1: this builds the per-floor content AND shows the board for the observation
+        /// pass. The board is hidden again by <see cref="HideClues"/> once the first trial starts.
         /// </summary>
         public void UpdateClues(int floorDisplayNumber)
         {
@@ -400,6 +403,18 @@ namespace DontLetHerIn.UI
                 CorridorClueDisplayFormatter.BuildBoardText(floorDisplayNumber, PrototypeLocalization.Language);
             _clueBoardZone.SetActive(true);
         }
+
+        /// <summary>
+        /// Phase 7H.1: hide the corridor clue board. Called when a trial's question starts, so
+        /// clues are observation-only and the player answers from memory. Safe to call repeatedly.
+        /// </summary>
+        public void HideClues()
+        {
+            if (_clueBoardZone != null) _clueBoardZone.SetActive(false);
+        }
+
+        /// <summary>True when the corridor clue board is currently shown (Phase 7H.1 readability check).</summary>
+        public bool AreCluesVisible => _clueBoardZone != null && _clueBoardZone.activeSelf;
 
         public void UpdateThreat(int distance, int stress, CreaturePhase phase)
         {

@@ -166,11 +166,19 @@ Observation pass (Phase 7H — DONE, first version): `PlayableRunFlowController`
 observation pass once per floor (run start, after each descent, after restart), AFTER
 `ui.UpdateClues(displayFloor)` and BEFORE the first trial. It shows a localized
 `OBSERVE THE CORRIDOR` overlay (`PrototypeLocalization.ObserveTitle` / `ObserveSubtitle`) and
-subtly eases the existing Main Camera toward the corridor and back (HYBRID; overlay-only fallback
-if no camera). During the pass no question is active, so the timer, threat and trial count cannot
-advance, and answers/question are hidden; the clue board stays visible. Pure timing/state live in
+eases the existing Main Camera toward the corridor/red light and back (HYBRID; overlay-only
+fallback if no camera). During the pass no question is active, so the timer, threat and trial
+count cannot advance, and answers/question are hidden. Pure timing/state live in
 `ObservationPassTiming` / `ObservationPassState`. This is in the orchestrator coroutine, not yet
 the dedicated scene MonoBehaviours below. No Cinemachine, no new package, no `Game.unity` edit.
+
+Phase 7H.1 tuning: the pass is slower and travels farther (`PlayableRunFlowController` field
+initializers — move 1.2s / hold 2.5s / return 0.7s ≈ 4.4s; forward 1.5m / height 0.1m; the scene
+does not serialize these, so no `Game.unity` edit). The static clue board is now OBSERVATION-ONLY:
+`ui.UpdateClues(displayFloor)` builds+shows it for the pass, and `ui.HideClues()` (called at
+`StartCurrentTrial`) hides it when the first question starts, so the player answers from memory.
+The rule is expressed purely as `ObservationPassState.CluesVisible` (visible only while observing);
+`GameplayUIController.AreCluesVisible` exposes the live state for inspection.
 
 Proposed MonoBehaviours (still planned — own NO trial/threat rules):
 

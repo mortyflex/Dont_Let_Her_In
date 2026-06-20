@@ -69,5 +69,53 @@ namespace DontLetHerIn.Tests.EditMode
             Assert.AreEqual(ObservationPhase.Inactive, state.Phase);
             Assert.IsTrue(state.Begin());
         }
+
+        // ---- Phase 7H.1: clue board is observation-only -------------------
+
+        [Test]
+        public void CluesVisible_TrueOnlyWhileObserving()
+        {
+            var state = new ObservationPassState();
+            // Inactive (question/idle phase) must not require the clue board.
+            Assert.IsFalse(state.CluesVisible);
+
+            // Clue board should be visible during observation.
+            state.Begin();
+            Assert.IsTrue(state.CluesVisible);
+        }
+
+        [Test]
+        public void CluesVisible_HidesWhenTrialStarts()
+        {
+            var state = new ObservationPassState();
+            state.Begin();
+            Assert.IsTrue(state.CluesVisible);
+
+            // Completing observation = the first trial starts: clues hide.
+            state.Complete();
+            Assert.IsFalse(state.CluesVisible);
+        }
+
+        [Test]
+        public void CluesVisible_QuestionPhase_DoesNotRequireClueBoard()
+        {
+            var state = new ObservationPassState();
+            state.Begin();
+            state.Complete(); // question phase
+            Assert.IsFalse(state.CluesVisible);
+        }
+
+        [Test]
+        public void CluesVisible_Restart_CanShowClueBoardAgain()
+        {
+            var state = new ObservationPassState();
+            state.Begin();
+            state.Complete();
+            Assert.IsFalse(state.CluesVisible);
+
+            // New run / restart observation shows the board again.
+            Assert.IsTrue(state.Begin());
+            Assert.IsTrue(state.CluesVisible);
+        }
     }
 }

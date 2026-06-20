@@ -977,6 +977,48 @@ Accepted
 
 ---
 
+## 2026-06-20 — Tune the observation pass and make the clue board observation-only (Phase 7H.1)
+
+### Decision
+
+Following user playtest feedback on Phase 7H, the observation pass is tuned: the camera moves
+slower and farther toward the corridor/red light (move 0.6->1.2s, hold 2.0->2.5s, return
+0.4->0.7s, ~4.4s total; forward 0.2->1.5m, height 0.05->0.1m), and the static corridor clue
+board becomes **observation-only** — visible during the pass, then hidden the moment the first
+question starts. The player observes the clues during the camera pass, then answers from memory.
+
+### Context
+
+Phase 7H worked technically but the camera move was too short/subtle to read as an observation,
+and the clue board stayed visible during the questions, which removed the memory challenge. The
+intended loop is: observe clues during the pass, then answer without them on screen.
+
+### Reasoning
+
+The timing/distance are plain serialized values on `PlayableRunFlowController`; the scene does
+not serialize them (only `ui`/`creature`/`statusHoldSeconds`), so updating the C# field
+initializers and the `ObservationPassTiming` defaults changes runtime with **no `Game.unity`
+edit** (no scene-merge risk). Moving along the camera's own forward axis aims at the corridor/red
+light regardless of world axes and returns to the stored home pose, so the camera never sticks
+forward. Clue visibility is expressed as a pure, testable rule (`ObservationPassState.CluesVisible`
+= visible only while observing) and wired with `GameplayUIController.UpdateClues` (show during
+observation) + `HideClues()` (called when the trial starts).
+
+### Consequences
+
+- `Game.unity` is unchanged; behavior changes come from script defaults only.
+- Clue board is no longer visible during the question phase (intended memory challenge); it still
+  updates per floor, is shown during each floor's observation, and re-appears on descent/restart.
+- The pass is slower (~4.4s) but still bounded (tests assert <= 6s, not excessive).
+- World-space clues and persistent always-visible clues remain future work.
+- Gameplay rules, threat/descent tuning and EN/FR localization are unchanged. EditMode tests: 227.
+
+### Status
+
+Accepted
+
+---
+
 ## 4. Replaced or Deprecated Decisions
 
 - **Door Seal scoring (Phase 7B.3)** — completed as an experiment, then removed from active

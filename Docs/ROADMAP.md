@@ -1026,6 +1026,11 @@ Observation camera pass added in Phase 7H: a short OBSERVE THE CORRIDOR moment p
   clue board stays visible. HYBRID: subtle Main Camera ease toward the corridor + timed overlay,
   with an overlay-only fallback if no camera is found. No Cinemachine, no new package, no scene edit.
   EditMode tests: 219/219 passing.
+Phase 7H.1 tunes the observation pass from user playtest feedback: slower, longer camera travel
+  (move 0.6->1.2s, hold 2.0->2.5s, return 0.4->0.7s, ~4.4s total) reaching farther toward the
+  corridor/red light (forward 0.2->1.5m, height 0.05->0.1m), and the clue board is now
+  observation-only — visible during the pass, then HIDDEN when the first question starts so the
+  player answers from memory. No scene edit (fields use C# initializers). EditMode tests: 227/227 passing.
 No iOS build yet.
 ```
 

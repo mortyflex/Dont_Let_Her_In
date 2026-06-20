@@ -216,6 +216,35 @@ after an answer, on win/loss).
 
 ---
 
+## 3F. Phase 7H.1 Checklist — Observation Pass Tuning
+
+Phase 7H.1 tunes the pass (slower/farther camera) and makes the clue board observation-only.
+Items unchecked; run in Game view portrait (e.g. 1080x1920).
+
+```txt
+[ ] On Floor 5 the camera move is clearly SLOWER and reaches FARTHER toward the corridor/red
+    light than in Phase 7H (move ~1.2s, hold ~2.5s, return ~0.7s, ~4.4s total).
+[ ] The camera returns to the normal gameplay pose BEFORE the first question appears (not stuck forward).
+[ ] During observation the "OBSERVED CLUES" board is visible together with the OBSERVE overlay.
+[ ] As soon as the first question starts, the clue board DISAPPEARS (no clues during questions).
+[ ] No clue board is visible during any of the 5 Floor 5 questions (answer from memory).
+[ ] After surviving Floor 5, Floor 4 starts: clue board updates to Floor 4 and is visible during
+    its observation, then hides again when the first Floor 4 question starts.
+[ ] Same observation-only clue behavior down to Floor 1.
+[ ] Restart repeats the same behavior on the top floor (board visible during observation, hidden
+    during questions).
+[ ] Camera move does not rotate wildly, does not break portrait readability, and (ideally) does
+    not clip through walls.
+[ ] French: OBSERVE LE COULOIR + INDICES OBSERVÉS visible only during observation; FR
+    prompts/answers/cues still correct during questions.
+[ ] No red Console errors.
+```
+
+Note: report if the camera now moves too far/clips visibly, if it feels too slow, or if the clue
+board ever stays visible during a question (it should not in 7H.1).
+
+---
+
 ## 4. Manual Playtest Checklist
 
 For every playable build, test:

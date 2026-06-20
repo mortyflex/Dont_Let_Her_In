@@ -331,10 +331,20 @@ What is implemented:
 - during the pass: question/answers hidden, timer/threat/trial count frozen, clue board visible.
 - testable timing/state isolated in pure classes ObservationPassTiming / ObservationPassState.
 
+Phase 7H.1 tuning (user playtest feedback):
+- the camera is slower and travels farther toward the corridor/red light:
+  move 0.6->1.2s, hold 2.0->2.5s, return 0.4->0.7s (~4.4s total); forward 0.2->1.5m, height 0.05->0.1m.
+- the static clue board is now OBSERVATION-ONLY: visible during the pass, then HIDDEN when the
+  first question starts (GameplayUIController.HideClues). The player answers from memory.
+  The board still updates per floor and reappears during each floor's observation / restart.
+  The rule is expressed purely as ObservationPassState.CluesVisible (visible only while observing).
+- still no Game.unity edit: timing/distance are C# field initializers (the scene does not serialize them).
+
 Still future (unchanged from the plan above):
 - per-anchor in-world clue visuals revealed by the pass (still the static HUD clue board for now).
+- persistent always-visible clues from the elevator (not in this prototype).
 - the dedicated ObservationPhaseController / CorridorObservationController scene MonoBehaviours.
-- a real forward/back camera travel along corridor rails; Phase 7H is intentionally subtle.
+- a real forward/back camera travel along corridor rails.
 ```
 
 ## Localization Considerations
