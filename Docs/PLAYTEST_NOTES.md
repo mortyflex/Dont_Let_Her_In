@@ -278,7 +278,12 @@ Phase 7I adds a prototype elevator descent transition between floors (UI doors, 
 Items unchecked; run in Game view portrait (e.g. 1080x1920).
 
 ```txt
-[ ] BEGIN DESCENT; Floor 5 observation works as validated (clue board only during observation).
+[ ] BEGIN DESCENT; the elevator cabin frame is visible: dark side panels, a floor plate showing
+    the current floor on the left, and a button column (5..1, G) on the right with the current
+    floor highlighted. The central corridor stays visible between them.
+[ ] The cabin frame stays visible during observation, questions AND the descent transition.
+[ ] The floor plate / highlighted button update to the next floor on each descent (5 -> 4 -> ...).
+[ ] Floor 5 observation works as validated (clue board only during observation).
 [ ] Answer the 5 Floor 5 trials so the floor is cleared.
 [ ] On floor clear the question/answers disappear and the clue board is hidden.
 [ ] FLOOR CLEARED shows, then two dark elevator doors CLOSE — SLOWLY — over the central corridor
@@ -295,7 +300,8 @@ Items unchecked; run in Game view portrait (e.g. 1080x1920).
     descent transition afterwards.
 [ ] Restart works and the doors never start a run already closed.
 [ ] French: ÉTAGE FRANCHI / PORTES EN FERMETURE / DESCENTE / PORTES EN OUVERTURE / ÉTAGE 4.
-[ ] No red Console errors.
+[ ] No red Console errors during play.
+[ ] STOPPING Play Mode logs NO "GameObjects can not be made active when they are being destroyed".
 ```
 
 Note: doors are prototype UI panels (no models) covering only the central aperture (~68% width).

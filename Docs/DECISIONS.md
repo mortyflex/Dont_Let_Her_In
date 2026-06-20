@@ -1145,6 +1145,48 @@ Accepted
 
 ---
 
+## 2026-06-20 — Phase 7I elevator cabin framing + destroy-safe creature visibility (playtest correction)
+
+### Decision
+
+This is a playtest correction of Phase 7I (NOT a new phase). Two changes: (1) a prototype elevator
+cabin frame is built in code in the HUD — dark side panels filling the margins around the central
+aperture, an amber floor plate showing the current floor (`ElevatorCabin.FloorPlateText`), and a
+non-interactive button column (5..1 then G) with the current floor highlighted — visible during
+observation/questions/transition so the player feels inside the cabin; (2) the Play Mode teardown
+error "GameObjects can not be made active when they are being destroyed" is fixed.
+
+### Context
+
+The doors already closed around the central aperture, but the visible side margins read as empty,
+not as a cabin. The user wanted buttons on one side and a floor plate on the left. Separately,
+stopping Play Mode threw a SetActive-during-destroy error from `CreatureController.UpdateVisibility`
+via `PlayableRunFlowController.OnDestroy -> StopObservationRoutine -> SetObservationHidden`.
+
+### Reasoning
+
+The cabin is pure UI built in code (no `Game.unity` edit, no assets), placed only in the side
+margins so it never covers the corridor aperture; the testable values live in a pure `ElevatorCabin`
+helper. For the teardown fix, `CreatureController` sets `_isDestroying` in `OnDestroy` and
+`UpdateVisibility` returns early (no SetActive) while destroying; `PlayableRunFlowController` sets
+its own `_isDestroying`, and `StopObservationRoutine(restoreVisuals)` is called with `false` from
+`OnDestroy`, so no visual restore touches objects being destroyed.
+
+### Consequences
+
+- `Game.unity` is unchanged; the cabin frame and the fix are code-only.
+- Stopping Play Mode no longer logs the SetActive-during-destroy error.
+- The cabin stays visible during observation/questions/transition; the floor plate/button highlight
+  update per floor; the doors still cover only the central aperture (ratio 0.68).
+- Creature masking, threat/clue rules, observation pass, restart and EN/FR localization are unchanged.
+- Real cabin/button art remains future work. EditMode tests: 261.
+
+### Status
+
+Accepted
+
+---
+
 ## 4. Replaced or Deprecated Decisions
 
 - **Door Seal scoring (Phase 7B.3)** — completed as an experiment, then removed from active

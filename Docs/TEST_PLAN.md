@@ -871,7 +871,7 @@ These tests must not change the current threat, descent or localization rules.
 Current status:
 
 ```txt
-255/255 EditMode tests passing after the Phase 7I door framing/timing adjustment (251 after the first Phase 7I, 233 after the Phase 7H.1 slow-travel correction, 219 after 7H, 204 after 7G, 189 after 7F, 179 after 7E, 148 after 7B.4).
+261/261 EditMode tests passing after the Phase 7I cabin framing + destroy-safe correction (255 after the door framing/timing adjustment, 251 after the first Phase 7I, 233 after the Phase 7H.1 slow-travel correction, 219 after 7H, 204 after 7G, 189 after 7F, 179 after 7E, 148 after 7B.4).
 Descent loop, non-receding threat, trial flow, per-floor reset and EN/FR localization are covered by EditMode tests.
 Phase 7E added evidence data-model tests (data containers, validator rules, prototype evidence set).
 Phase 7F added PlayableContentLocalizationTests: the live PrototypeFloorSet prompts/answers/cues
@@ -908,6 +908,10 @@ Phase 7I playtest correction updated ElevatorTransitionTimingTests to the adjust
   total ~6.8s stays bounded (<= 8s) and shorter than the observation pass, and
   GameplayUIController.DoorApertureWidthRatio is asserted < 1.0 and within 0.55..0.8 (doors are not
   full-screen; the side cabin stays visible).
+Phase 7I cabin framing + destroy-safe correction added ElevatorCabinTests (FloorPlateText formats
+  floors 5..1, ButtonFloors == {5,4,3,2,1}, ground button "G", DoorApertureWidthRatio within
+  0.62..0.72, and non-zero side margins around the aperture) and a CreatureControllerTests case that
+  SetObservationHidden issues no SetActive while _isDestroying (teardown safety, no Console error).
 Intro readability, floor transitions, French UI smoke check and the clue board are manual Play Mode checks.
 The observation overlay/camera ease itself is a manual Play Mode check (MonoBehaviour/coroutine);
   the testable timing/state logic is isolated in ObservationPassTiming / ObservationPassState.

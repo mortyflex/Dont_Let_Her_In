@@ -35,6 +35,16 @@ namespace DontLetHerIn.Creature
         // masking only — distance, phase and threat rules are untouched.
         private bool _observationHidden;
 
+        // Phase 7I correction: set once this object is being destroyed. While true, no SetActive
+        // is issued on the visual root, so tearing down Play Mode never throws "GameObjects can
+        // not be made active when they are being destroyed".
+        private bool _isDestroying;
+
+        private void OnDestroy()
+        {
+            _isDestroying = true;
+        }
+
         /// <summary>Raised when <see cref="CurrentPhase"/> changes.</summary>
         public event Action<CreaturePhase> PhaseChanged;
 
@@ -88,7 +98,8 @@ namespace DontLetHerIn.Creature
 
         private void UpdateVisibility(CreaturePhase phase)
         {
-            if (visualRoot == null)
+            // Never touch SetActive while this object is being destroyed (teardown safety).
+            if (visualRoot == null || _isDestroying)
             {
                 return;
             }

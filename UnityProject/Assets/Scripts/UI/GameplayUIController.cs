@@ -59,6 +59,14 @@ namespace DontLetHerIn.UI
         private static readonly Color DoorColor = new Color(0.05f, 0.05f, 0.06f, 1f);
         private static readonly Color DoorSeamColor = new Color(0.18f, 0.18f, 0.20f, 1f);
 
+        // Phase 7I cabin frame (prototype): dark metal side panels, buttons and an amber floor plate.
+        private static readonly Color CabinPanelColor = new Color(0.085f, 0.09f, 0.10f, 1f);
+        private static readonly Color CabinTrimColor = new Color(0.16f, 0.17f, 0.19f, 1f);
+        private static readonly Color CabinButtonColor = new Color(0.14f, 0.15f, 0.18f, 1f);
+        private static readonly Color CabinButtonActiveColor = new Color(0.95f, 0.55f, 0.2f, 1f);
+        private static readonly Color FloorPlateBgColor = new Color(0.02f, 0.03f, 0.03f, 1f);
+        private static readonly Color FloorPlateTextColor = new Color(0.96f, 0.55f, 0.2f, 1f);
+
         /// <summary>Raised when the player presses Start.</summary>
         public event Action StartClicked;
 
@@ -104,6 +112,12 @@ namespace DontLetHerIn.UI
         private Text _descentTitle;
         private Text _descentSubtitle;
         private Coroutine _descentCueRoutine;
+
+        // Phase 7I: prototype elevator cabin frame (side panels, button column, floor plate).
+        private GameObject _elevatorCabinRoot;
+        private Text _floorPlateText;
+        private Image[] _floorButtonImages;
+        private Text[] _floorButtonLabels;
 
         private Text _startTitleText;
         private Text _introBodyText;
@@ -173,6 +187,7 @@ namespace DontLetHerIn.UI
             _resultPanel.SetActive(false);
             HideFloorTransition();
             HideElevatorDoors(); // Phase 7I: never start a run with the doors overlay showing
+            SetElevatorCabinVisible(true); // Phase 7I: cabin frame visible throughout gameplay
             SetStatus(string.Empty, TextColor);
             ResetFeedback();
         }
@@ -439,6 +454,99 @@ namespace DontLetHerIn.UI
             if (_descentTitle != null) _descentTitle.rectTransform.localPosition = Vector3.zero;
             if (_descentSubtitle != null) _descentSubtitle.rectTransform.localPosition = Vector3.zero;
             _descentCueRoutine = null;
+        }
+
+        // ---- Elevator cabin frame (Phase 7I) -------------------------------
+
+        /// <summary>
+        /// Build the prototype elevator cabin frame: dark metal side panels filling the margins
+        /// LEFT and RIGHT of the central corridor aperture (so they never cover the aperture), an
+        /// amber floor plate on the left and a non-interactive button column (5..1, G) on the right.
+        /// Purely cosmetic, built in code; stays visible during observation/questions/transition.
+        /// </summary>
+        private void BuildElevatorCabinFrame(RectTransform root)
+        {
+            _elevatorCabinRoot = CreateContainer("ElevatorCabinFrame", root);
+            var cabin = (RectTransform)_elevatorCabinRoot.transform;
+
+            float apertureLeft = 0.5f - DoorApertureWidthRatio * 0.5f;
+            float apertureRight = 0.5f + DoorApertureWidthRatio * 0.5f;
+
+            // Side cabin walls (in the margins only — the central aperture stays clear).
+            RectTransform leftPanel = CreatePanel("CabinLeftPanel", cabin, CabinPanelColor,
+                new Vector2(0f, 0f), new Vector2(apertureLeft, 1f));
+            RectTransform rightPanel = CreatePanel("CabinRightPanel", cabin, CabinPanelColor,
+                new Vector2(apertureRight, 0f), new Vector2(1f, 1f));
+            // Inner trim lines next to the aperture for a little depth.
+            CreatePanel("CabinLeftTrim", leftPanel, CabinTrimColor, new Vector2(0.92f, 0f), new Vector2(1f, 1f));
+            CreatePanel("CabinRightTrim", rightPanel, CabinTrimColor, new Vector2(0f, 0f), new Vector2(0.08f, 1f));
+
+            // Floor plate on the left wall: a dark readout box with the current floor number.
+            RectTransform plate = CreatePanel("CabinFloorPlate", leftPanel, FloorPlateBgColor,
+                new Vector2(0.12f, 0.60f), new Vector2(0.9f, 0.76f));
+            CreatePanel("CabinFloorPlateTrim", plate, CabinTrimColor, new Vector2(0f, 0.94f), new Vector2(1f, 1f));
+            _floorPlateText = CreateText("CabinFloorPlateText", plate, "5", 64, TextAnchor.MiddleCenter,
+                new Vector2(0.04f, 0.04f), new Vector2(0.96f, 0.9f));
+            _floorPlateText.color = FloorPlateTextColor;
+            _floorPlateText.fontStyle = FontStyle.Bold;
+
+            // Button column on the right wall: floors 5..1 then G, top to bottom (non-interactive).
+            int[] floors = ElevatorCabin.ButtonFloors;
+            int count = floors.Length + 1; // + ground button
+            _floorButtonImages = new Image[count];
+            _floorButtonLabels = new Text[count];
+
+            float top = 0.84f;
+            float h = 0.066f;
+            float gap = 0.016f;
+            for (int i = 0; i < count; i++)
+            {
+                float yMax = top - i * (h + gap);
+                float yMin = yMax - h;
+                RectTransform btn = CreatePanel($"CabinButton{i}", rightPanel, CabinButtonColor,
+                    new Vector2(0.2f, yMin), new Vector2(0.8f, yMax));
+                bool isGround = i == floors.Length;
+                Text label = CreateText($"CabinButtonLabel{i}", btn,
+                    isGround ? ElevatorCabin.GroundButtonLabel : floors[i].ToString(),
+                    34, TextAnchor.MiddleCenter, new Vector2(0f, 0f), new Vector2(1f, 1f));
+                label.color = TextColor;
+                label.fontStyle = FontStyle.Bold;
+                _floorButtonImages[i] = btn.GetComponent<Image>();
+                _floorButtonLabels[i] = label;
+            }
+
+            _elevatorCabinRoot.SetActive(true);
+        }
+
+        /// <summary>Show or hide the whole elevator cabin frame (kept visible during gameplay).</summary>
+        public void SetElevatorCabinVisible(bool visible)
+        {
+            if (_elevatorCabinRoot != null) _elevatorCabinRoot.SetActive(visible);
+        }
+
+        /// <summary>
+        /// Update the cabin floor plate to the given displayed floor and highlight the matching
+        /// button in the column. Called per floor (run start and each descent). Floor-neutral
+        /// digits via <see cref="ElevatorCabin.FloorPlateText"/>; the ground button is never highlighted.
+        /// </summary>
+        public void UpdateElevatorFloorPlate(int floorDisplayNumber)
+        {
+            if (_floorPlateText != null) _floorPlateText.text = ElevatorCabin.FloorPlateText(floorDisplayNumber);
+
+            if (_floorButtonImages == null) return;
+            int[] floors = ElevatorCabin.ButtonFloors;
+            for (int i = 0; i < _floorButtonImages.Length; i++)
+            {
+                bool active = i < floors.Length && floors[i] == floorDisplayNumber;
+                if (_floorButtonImages[i] != null)
+                {
+                    _floorButtonImages[i].color = active ? CabinButtonActiveColor : CabinButtonColor;
+                }
+                if (_floorButtonLabels[i] != null)
+                {
+                    _floorButtonLabels[i].color = active ? FloorPlateBgColor : TextColor;
+                }
+            }
         }
 
         private static string FormatCueLines(QuestionCue cue)
@@ -726,6 +834,11 @@ namespace DontLetHerIn.UI
                 new Color(DangerOverlayColor.r, DangerOverlayColor.g, DangerOverlayColor.b, 0f),
                 new Vector2(0f, 0f), new Vector2(1f, 1f)).GetComponent<Image>();
             _dangerOverlay.raycastTarget = false;
+
+            // Elevator cabin frame (Phase 7I): a background layer so the side margins around the
+            // central corridor aperture read as the inside of the cabin (panels + buttons + floor
+            // plate). Built early so the HUD and doors render on top; never covers the aperture.
+            BuildElevatorCabinFrame(root);
 
             // ---- TOP HUD (compact translucent band; corridor stays visible) ----
             _floorText = CreateText("FloorText", root, "FLOOR 1 / 5   —   TRIAL 1 / 5", 38, TextAnchor.MiddleCenter,

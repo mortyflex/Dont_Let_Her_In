@@ -142,6 +142,30 @@ namespace DontLetHerIn.Tests.EditMode
             Assert.AreEqual(distance, controller.CurrentDistance);
         }
 
+        [Test]
+        public void SetObservationHidden_DuringDestroy_DoesNotToggleVisual()
+        {
+            CreatureController controller = MakeController();
+            GameObject visual = AttachVisualRoot(controller);
+
+            controller.ApplyDistance(50f); // visible phase
+            Assert.IsTrue(visual.activeSelf);
+
+            // Simulate teardown: while destroying, no SetActive must be issued on the visual root
+            // (otherwise Unity throws "GameObjects can not be made active when being destroyed").
+            SetPrivateBool(controller, "_isDestroying", true);
+            Assert.DoesNotThrow(() => controller.SetObservationHidden(true));
+            Assert.IsTrue(visual.activeSelf, "Visual root must be left untouched while destroying.");
+        }
+
+        private static void SetPrivateBool(CreatureController controller, string fieldName, bool value)
+        {
+            FieldInfo field = typeof(CreatureController).GetField(
+                fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field, $"Expected private field '{fieldName}' on CreatureController.");
+            field.SetValue(controller, value);
+        }
+
         private GameObject AttachVisualRoot(CreatureController controller)
         {
             var visual = new GameObject("VisualRoot");

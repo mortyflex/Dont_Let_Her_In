@@ -44,7 +44,9 @@ After clearing a non-final floor a prototype elevator descent transition plays (
   -> doors open -> the next floor's observation pass starts ONLY after the doors open.
   The creature and the clue board stay hidden for the whole transition; it is slower/heavier (~6.8s)
   but still shorter than the observation pass. The doors are dark UI panels covering only the central
-  corridor aperture (the cabin sides stay visible), a prototype visual, not final art.
+  corridor aperture (the cabin sides stay visible), a prototype visual, not final art. A prototype
+  cabin frame (side panels, a floor plate showing the current floor, and a 5..1/G button column with
+  the current floor highlighted) is shown around the aperture so the player feels inside the elevator.
 After clearing Floor 1: GROUND FLOOR -> YOU ESCAPED (no descent transition after the final escape).
 ```
 

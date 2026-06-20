@@ -1047,6 +1047,13 @@ Phase 7I playtest correction (door framing/timing adjustment): the transition is
   shorter than the observation pass) — and the doors no longer cover the full screen: they only
   cover the central corridor aperture (DoorApertureWidthRatio 0.68), so the side cabin (buttons/
   walls) stays visible and the in-elevator feel is kept. No scene edit. EditMode tests: 255/255 passing.
+Phase 7I playtest correction (cabin framing + destroy-safe creature): a prototype elevator cabin
+  frame is built in code (dark side panels around the central aperture, an amber floor plate showing
+  the current floor, and a non-interactive button column 5..1/G with the current floor highlighted),
+  visible during observation/questions/transition so the player feels inside the cabin. Also fixed
+  the OnDestroy "GameObjects can not be made active when being destroyed" error: CreatureController
+  guards SetActive while destroying and PlayableRunFlowController skips visual restores during
+  teardown. No scene edit. EditMode tests: 261/261 passing.
 No iOS build yet.
 ```
 

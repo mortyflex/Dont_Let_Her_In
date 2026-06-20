@@ -69,6 +69,7 @@ namespace DontLetHerIn.GameLoop
         private RunTrialProgress _progress;
         private Coroutine _advanceRoutine;
         private bool _eventsBound;
+        private bool _isDestroying; // Phase 7I: avoid visual restores while tearing down Play Mode.
 
         // Phase 7H observation pass state.
         private ObservationPassTiming _observationTiming;
@@ -155,11 +156,14 @@ namespace DontLetHerIn.GameLoop
 
         private void OnDestroy()
         {
+            _isDestroying = true;
             if (_questions != null)
             {
                 _questions.AnswerResolved -= HandleAnswerResolved;
             }
-            StopObservationRoutine();
+            // Tearing down: just stop the coroutine, never touch UI/creature SetActive (the scene
+            // objects are being destroyed too), so no "made active while being destroyed" error.
+            StopObservationRoutine(restoreVisuals: false);
             UnbindUiEvents();
         }
 
@@ -239,6 +243,9 @@ namespace DontLetHerIn.GameLoop
             _run.ResetThreatForFloor(DescentFloorProfile.StartDistance(displayFloor));
             UpdateCreature();
             RefreshThreatHud();
+
+            // Phase 7I: update the elevator cabin floor plate / button column to this floor.
+            if (ui != null) ui.UpdateElevatorFloorPlate(displayFloor);
 
             // Phase 7I: the clue board is no longer revealed here — it is revealed at the start
             // of the observation pass (see ObserveThenStartTrial) so it stays hidden during the
@@ -550,10 +557,12 @@ namespace DontLetHerIn.GameLoop
         }
 
         /// <summary>
-        /// Stop any running observation pass and restore the camera/overlay if it was
-        /// interrupted mid-pass (e.g. restart). Safe to call when no pass is running.
+        /// Stop any running observation pass and (when <paramref name="restoreVisuals"/> is true)
+        /// restore the camera/overlay/creature if it was interrupted mid-pass (e.g. restart). Pass
+        /// false during teardown (OnDestroy) so no SetActive is issued on objects being destroyed.
+        /// Safe to call when no pass is running.
         /// </summary>
-        private void StopObservationRoutine()
+        private void StopObservationRoutine(bool restoreVisuals = true)
         {
             if (_observationRoutine != null)
             {
@@ -563,15 +572,18 @@ namespace DontLetHerIn.GameLoop
 
             if (_observation.IsObserving)
             {
-                if (_cameraPoseCaptured && observationCamera != null)
+                if (restoreVisuals && !_isDestroying)
                 {
-                    Transform t = observationCamera.transform;
-                    t.localPosition = _cameraHomePosition;
-                    t.localRotation = _cameraHomeRotation;
+                    if (_cameraPoseCaptured && observationCamera != null)
+                    {
+                        Transform t = observationCamera.transform;
+                        t.localPosition = _cameraHomePosition;
+                        t.localRotation = _cameraHomeRotation;
+                    }
+                    if (ui != null) ui.HideObservationHint();
+                    // Restore creature visibility so an interrupted pass never leaves her stuck hidden.
+                    if (creature != null) creature.SetObservationHidden(false);
                 }
-                if (ui != null) ui.HideObservationHint();
-                // Restore creature visibility so an interrupted pass never leaves her stuck hidden.
-                if (creature != null) creature.SetObservationHidden(false);
                 _observation.Reset();
             }
         }

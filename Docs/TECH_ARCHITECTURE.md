@@ -62,6 +62,8 @@ GameLoop/ElevatorTransitionTiming.cs   - Pure Phase 7I timing (floor-cleared hol
                                          descent hold / door open; total, all-positive).
 GameLoop/ElevatorTransitionState.cs    - Pure Phase 7I state guard: door/descent phase; gates
                                          answers/timer/clue-board/creature while the transition runs.
+GameLoop/ElevatorCabin.cs              - Pure Phase 7I cabin data: floor-plate text + button-column
+                                         floors (5..1) / ground label for the prototype cabin frame.
 GameLoop/PrototypeLocalization.cs      - Central EN/FR string registry + current language.
 GameLoop/LocalizedText.cs              - Small (english, french) pair with Get(language).
 GameLoop/GameLanguage.cs               - enum { English, French }.
@@ -203,6 +205,16 @@ screen — `GameplayUIController.DoorApertureWidthRatio` (0.68) drives `SetEleva
 each leaf grows from its aperture edge to the centre when closing and collapses to zero width at the
 edge when open; the side cabin (buttons/walls) stays visible. The ratio is a public const, so the
 "doors are not full-screen" rule is unit-testable.
+
+Phase 7I playtest correction (cabin framing + destroy safety): `GameplayUIController.BuildElevatorCabinFrame`
+builds a code-only cabin in the side margins around the aperture (dark panels, an amber floor plate,
+a non-interactive button column 5..1/G), kept visible during observation/questions/transition;
+`UpdateElevatorFloorPlate(displayFloor)` (called from `BeginFloor`) sets the plate digits via the pure
+`ElevatorCabin` and highlights the current-floor button. The Play Mode teardown error is fixed:
+`CreatureController` sets `_isDestroying` in `OnDestroy` and `UpdateVisibility` skips `SetActive` while
+destroying; `PlayableRunFlowController` sets its own `_isDestroying` and calls
+`StopObservationRoutine(restoreVisuals: false)` from `OnDestroy`, so no visual restore touches objects
+being destroyed.
 
 Proposed MonoBehaviours (still planned — own NO trial/threat rules):
 
