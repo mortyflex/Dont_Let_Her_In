@@ -1019,6 +1019,41 @@ Accepted
 
 ---
 
+## 2026-06-20 — Make the observation pass a real slow travelling (Phase 7H.2)
+
+### Decision
+
+After further playtest feedback, the observation camera move becomes a real travelling: a slow ~5s
+travel toward the corridor/red light, a brief ~0.5s hold, then a slow ~5s travel back (~10.5s
+total, bounded under 11s), and it reaches much farther (forward 1.5->5.0m, height 0.1->0.15m). The
+camera still returns to the gameplay pose before the question. Only the observation timing/distance
+change; the clue board rule and all gameplay are unchanged.
+
+### Context
+
+Phase 7H.1 was still too fast and too short to read as an observation travelling. The user asked
+for roughly 5s out and 5s back, reaching deep toward the red light at the end of the corridor.
+
+### Reasoning
+
+These are plain serialized values on `PlayableRunFlowController` plus the `ObservationPassTiming`
+defaults; the scene does not serialize them, so updating the C# initializers changes runtime with
+no `Game.unity` edit. Moving along the camera's own forward axis aims at the corridor/red light and
+returns to the stored home pose, so the camera never sticks forward. No Cinemachine, no new package.
+
+### Consequences
+
+- `Game.unity` is unchanged; behavior changes come from script defaults only.
+- The pass is much longer (~10.5s) but still bounded (tests assert <= 11s).
+- Clue board stays observation-only; descent, threat, trials and EN/FR localization are unchanged.
+- A real per-clue / rail-based travelling and world-space clues remain future work. EditMode tests: 230.
+
+### Status
+
+Accepted
+
+---
+
 ## 4. Replaced or Deprecated Decisions
 
 - **Door Seal scoring (Phase 7B.3)** — completed as an experiment, then removed from active

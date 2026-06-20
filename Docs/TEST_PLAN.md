@@ -871,7 +871,7 @@ These tests must not change the current threat, descent or localization rules.
 Current status:
 
 ```txt
-227/227 EditMode tests passing after Phase 7H.1 (219 after 7H, 204 after 7G, 189 after 7F, 179 after 7E, 148 after 7B.4).
+230/230 EditMode tests passing after Phase 7H.2 (227 after 7H.1, 219 after 7H, 204 after 7G, 189 after 7F, 179 after 7E, 148 after 7B.4).
 Descent loop, non-receding threat, trial flow, per-floor reset and EN/FR localization are covered by EditMode tests.
 Phase 7E added evidence data-model tests (data containers, validator rules, prototype evidence set).
 Phase 7F added PlayableContentLocalizationTests: the live PrototypeFloorSet prompts/answers/cues
@@ -891,6 +891,9 @@ Phase 7H.1 added 8 tuning tests: ObservationPassTimingTests now assert the 7H.1 
   observation-only clue board rule via ObservationPassState.CluesVisible: visible only while
   observing, hidden once the trial starts, not required in the question phase, and re-shown on
   the next floor / restart observation.
+Phase 7H.2 updated ObservationPassTimingTests to the travelling defaults (move 5.0s, return 5.0s,
+  hold 0.5s): camera move/return are exactly 5s, total is ~10.5s and stays bounded (<= 11s), and
+  all values remain positive.
 Intro readability, floor transitions, French UI smoke check and the clue board are manual Play Mode checks.
 The observation overlay/camera ease itself is a manual Play Mode check (MonoBehaviour/coroutine);
   the testable timing/state logic is isolated in ObservationPassTiming / ObservationPassState.

@@ -245,6 +245,29 @@ board ever stays visible during a question (it should not in 7H.1).
 
 ---
 
+## 3G. Phase 7H.2 Checklist — Slow Observation Travel
+
+Phase 7H.2 turns the observation move into a real travelling (only timing/distance change).
+Items unchecked; run in Game view portrait (e.g. 1080x1920).
+
+```txt
+[ ] On Floor 5 the camera now performs a clear, slow TRAVELLING: ~5s forward toward the corridor/
+    red light, a brief pause, then ~5s back (~10.5s total). It should read as a real travel, not a nudge.
+[ ] The camera reaches much FARTHER than Phase 7H.1 (forward ~5m, height ~0.15m).
+[ ] The camera returns to the normal gameplay pose BEFORE the first question appears (not stuck forward).
+[ ] During the whole travel: question/answers hidden, timer not counting, threat (DIST/STRESS) frozen.
+[ ] The "OBSERVED CLUES" board is visible during the travel, then hidden when the first question starts.
+[ ] After descent, Floor 4 repeats the same slow travel with its own clues; same down to Floor 1.
+[ ] Restart repeats the same slow travel on the top floor.
+[ ] Camera does not rotate wildly and (ideally) does not clip through walls at ~5m forward.
+[ ] No red Console errors.
+```
+
+Note: ~10.5s total is intentional. Report if it feels too long, if 5m forward clips into geometry,
+or if the camera ever fails to return before the question.
+
+---
+
 ## 4. Manual Playtest Checklist
 
 For every playable build, test:

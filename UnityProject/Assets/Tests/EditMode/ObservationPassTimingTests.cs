@@ -13,12 +13,32 @@ namespace DontLetHerIn.Tests.EditMode
             Phase7HMoveSeconds + Phase7HHoldSeconds + Phase7HReturnSeconds; // 3.0s
 
         [Test]
-        public void Default_UsesRecommendedPhase7H1Values()
+        public void Default_UsesRecommendedPhase7H2Values()
         {
             var timing = ObservationPassTiming.Default;
-            Assert.AreEqual(2.5f, timing.ObservationHoldSeconds, 0.0001f);
-            Assert.AreEqual(1.2f, timing.CameraMoveSeconds, 0.0001f);
-            Assert.AreEqual(0.7f, timing.CameraReturnSeconds, 0.0001f);
+            Assert.AreEqual(0.5f, timing.ObservationHoldSeconds, 0.0001f);
+            Assert.AreEqual(5.0f, timing.CameraMoveSeconds, 0.0001f);
+            Assert.AreEqual(5.0f, timing.CameraReturnSeconds, 0.0001f);
+        }
+
+        [Test]
+        public void Default_CameraMove_IsFiveSeconds()
+        {
+            Assert.AreEqual(5.0f, ObservationPassTiming.Default.CameraMoveSeconds, 0.0001f);
+        }
+
+        [Test]
+        public void Default_CameraReturn_IsFiveSeconds()
+        {
+            Assert.AreEqual(5.0f, ObservationPassTiming.Default.CameraReturnSeconds, 0.0001f);
+        }
+
+        [Test]
+        public void Default_Total_IsAroundTenSeconds()
+        {
+            // Phase 7H.2: ~5s out + brief hold + ~5s back. Around 10s (10.5s with a 0.5s hold).
+            Assert.AreEqual(10.5f, ObservationPassTiming.Default.TotalSeconds, 0.0001f);
+            Assert.GreaterOrEqual(ObservationPassTiming.Default.TotalSeconds, 10f);
         }
 
         [Test]
@@ -57,8 +77,8 @@ namespace DontLetHerIn.Tests.EditMode
         [Test]
         public void Default_Total_IsBounded_AndNotExcessive()
         {
-            // Short but readable: comfortably under ~6s so the pass never feels painfully long.
-            Assert.LessOrEqual(ObservationPassTiming.Default.TotalSeconds, 6f);
+            // A real travelling but still bounded: total stays under ~11s.
+            Assert.LessOrEqual(ObservationPassTiming.Default.TotalSeconds, 11f);
         }
 
         [Test]

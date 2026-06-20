@@ -1031,6 +1031,10 @@ Phase 7H.1 tunes the observation pass from user playtest feedback: slower, longe
   corridor/red light (forward 0.2->1.5m, height 0.05->0.1m), and the clue board is now
   observation-only — visible during the pass, then HIDDEN when the first question starts so the
   player answers from memory. No scene edit (fields use C# initializers). EditMode tests: 227/227 passing.
+Phase 7H.2 turns the observation move into a real travelling (further playtest feedback):
+  move 1.2->5.0s, hold 2.5->0.5s, return 0.7->5.0s (~10.5s total, bounded <= 11s) and farther travel
+  (forward 1.5->5.0m, height 0.1->0.15m). Camera still returns to the gameplay pose before the
+  question. Clue board rule and all gameplay unchanged. No scene edit. EditMode tests: 230/230 passing.
 No iOS build yet.
 ```
 

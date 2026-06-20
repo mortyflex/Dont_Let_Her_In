@@ -41,24 +41,24 @@ namespace DontLetHerIn.GameLoop
         [Tooltip("Seconds the ASCENDING message holds before the next floor starts.")]
         [SerializeField] private float ascendingHoldSeconds = 0.8f;
 
-        [Header("Observation pass (Phase 7H / 7H.1 tuning)")]
+        [Header("Observation pass (Phase 7H / 7H.1 / 7H.2 tuning)")]
         [Tooltip("Optional. Falls back to Camera.main, then the first Camera found in the scene.")]
         [SerializeField] private Camera observationCamera;
 
-        [Tooltip("Seconds the OBSERVE THE CORRIDOR overlay holds before the first trial of a floor.")]
-        [SerializeField] private float observationHoldSeconds = 2.5f;
+        [Tooltip("Seconds the camera pauses at the deep point of the travel (0..0.5).")]
+        [SerializeField] private float observationHoldSeconds = 0.5f;
 
-        [Tooltip("Seconds the camera eases toward the corridor at the start of the observation pass.")]
-        [SerializeField] private float cameraMoveSeconds = 1.2f;
+        [Tooltip("Seconds of the slow travel toward the corridor / red light (Phase 7H.2 ~5s).")]
+        [SerializeField] private float cameraMoveSeconds = 5.0f;
 
-        [Tooltip("Seconds the camera takes to settle back to the gameplay pose before the trial.")]
-        [SerializeField] private float cameraReturnSeconds = 0.7f;
+        [Tooltip("Seconds of the slow travel back to the gameplay pose before the trial (~5s).")]
+        [SerializeField] private float cameraReturnSeconds = 5.0f;
 
         [Tooltip("How far the camera travels toward the corridor / red light during observation (metres).")]
-        [SerializeField] private float observationForwardOffset = 1.5f;
+        [SerializeField] private float observationForwardOffset = 5.0f;
 
         [Tooltip("How much the camera rises during observation (metres). Keep small.")]
-        [SerializeField] private float observationHeightOffset = 0.1f;
+        [SerializeField] private float observationHeightOffset = 0.15f;
 
         private RunController _run;
         private QuestionManager _questions;

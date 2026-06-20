@@ -6,19 +6,19 @@ namespace DontLetHerIn.GameLoop
     /// durations only — no Unity dependency, so it stays fully testable in EditMode. Negative
     /// inputs are clamped to zero so the pass never goes backwards.
     ///
-    /// Design targets (Phase 7H.1 tuning — slower, more readable than the Phase 7H 0.6/2.0/0.4):
+    /// Design targets (Phase 7H.2 tuning — a real, readable travelling, not a subtle nudge):
     /// <code>
-    /// observationHoldSeconds = 2.5
-    /// cameraMoveSeconds      = 1.2
-    /// cameraReturnSeconds    = 0.7
-    /// total                  ≈ 4.4s (short but readable observation, not painfully long)
+    /// cameraMoveSeconds      = 5.0  (slow 5s travel toward the corridor / red light)
+    /// observationHoldSeconds = 0.5  (brief pause at the deep point; 0.0..0.5 max)
+    /// cameraReturnSeconds    = 5.0  (slow 5s travel back to the gameplay pose)
+    /// total                  ≈ 10.5s (bounded; stays under ~11s)
     /// </code>
     /// </summary>
     public sealed class ObservationPassTiming
     {
-        public const float DefaultObservationHoldSeconds = 2.5f;
-        public const float DefaultCameraMoveSeconds = 1.2f;
-        public const float DefaultCameraReturnSeconds = 0.7f;
+        public const float DefaultObservationHoldSeconds = 0.5f;
+        public const float DefaultCameraMoveSeconds = 5.0f;
+        public const float DefaultCameraReturnSeconds = 5.0f;
 
         /// <summary>How long the observation overlay holds while the player reads the corridor.</summary>
         public float ObservationHoldSeconds { get; }
