@@ -934,6 +934,49 @@ Accepted
 
 ---
 
+## 2026-06-20 — Implement the observation camera pass as a HYBRID overlay + subtle camera ease (Phase 7H)
+
+### Decision
+
+Phase 7H realizes the deferred "observation camera pass" decision (2026-06-19) as a short
+moment played once per floor, before its first trial, from `PlayableRunFlowController`. It is a
+HYBRID: a localized `OBSERVE THE CORRIDOR` overlay (EN/FR) plus a subtle ease of the existing
+Main Camera toward the corridor and back. The testable timing/state is isolated in pure classes
+`ObservationPassTiming` and `ObservationPassState`. If no camera is found it degrades to an
+overlay-only fallback with the same pacing. No Cinemachine, no new package, no `Game.unity` edit.
+
+### Context
+
+The static clue board (Phase 7G) shows where answers come from, but the player jumped straight
+into a trial with no beat to read the corridor. A short observation pass adds that beat. The
+earlier decision flagged camera work as higher-risk, so it had to stay subtle and regression-safe.
+
+### Reasoning
+
+A coroutine in the existing flow controller (run at floor start, after each descent, and after
+restart) keeps the change inside one orchestrator. Running the pass while no question is active
+means the timer, threat and trial count cannot advance for free — no rule duplication. Isolating
+timing/state in pure classes keeps the logic EditMode-testable despite the coroutine/camera being
+manual-only. The camera move uses the existing Main Camera with a stored home pose and a settle,
+so it cannot drift, and overlay-only fallback guarantees the pass works even without a camera.
+
+### Consequences
+
+- `Game.unity` is unchanged; the overlay lives in the runtime-built HUD over the question/answer
+  band only, so the corridor and the clue board above it stay visible during observation.
+- During observation: question/answers hidden, status/cue/proximity cleared, timer/threat/trial
+  count frozen, clue board visible. After it: normal trial flow resumes exactly as before.
+- The observation pass does not run between trials, after answers, on wrong/timeout, or on
+  win/loss. A duplicate pass cannot start while one is running; restart/result interrupt it
+  safely and restore the camera/overlay.
+- This is prototype pacing/readability, not final cinematic polish. EditMode tests: 219.
+
+### Status
+
+Accepted
+
+---
+
 ## 4. Replaced or Deprecated Decisions
 
 - **Door Seal scoring (Phase 7B.3)** — completed as an experiment, then removed from active

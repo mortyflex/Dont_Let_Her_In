@@ -871,7 +871,7 @@ These tests must not change the current threat, descent or localization rules.
 Current status:
 
 ```txt
-204/204 EditMode tests passing after Phase 7G (189 after 7F, 179 after 7E, 148 after 7B.4).
+219/219 EditMode tests passing after Phase 7H (204 after 7G, 189 after 7F, 179 after 7E, 148 after 7B.4).
 Descent loop, non-receding threat, trial flow, per-floor reset and EN/FR localization are covered by EditMode tests.
 Phase 7E added evidence data-model tests (data containers, validator rules, prototype evidence set).
 Phase 7F added PlayableContentLocalizationTests: the live PrototypeFloorSet prompts/answers/cues
@@ -880,12 +880,19 @@ Phase 7F added PlayableContentLocalizationTests: the live PrototypeFloorSet prom
 Phase 7G added CorridorClueDisplayFormatterTests: each displayed floor (5..1) maps to 5 clue
   entries from PrototypeEvidenceFloorSet, EN/FR board text, language-stable clue count, safe
   fallback for unknown floors, and never-null board/line text.
+Phase 7H added pure observation-pass tests (15 total): ObservationPassTimingTests (recommended
+  values, all positive, total = sum, negative inputs clamp to zero), ObservationPassStateTests
+  (answers/timer gated while observing, no duplicate Begin, answers active again after Complete,
+  restart can observe again, Reset), and ObservationPassContentTests (EN/FR observation overlay
+  text, language resolution, floor count stays 5, trials stay 5 per floor).
 Intro readability, floor transitions, French UI smoke check and the clue board are manual Play Mode checks.
+The observation overlay/camera ease itself is a manual Play Mode check (MonoBehaviour/coroutine);
+  the testable timing/state logic is isolated in ObservationPassTiming / ObservationPassState.
 No iOS build checks yet.
 ```
 
 Next expected test activity:
 
 ```txt
-Phase 7H+: PlayMode tests for the observation camera pass and handoff when implemented.
+Phase 7I+: PlayMode tests for the observation camera pass and the observation/evidence handoff.
 ```

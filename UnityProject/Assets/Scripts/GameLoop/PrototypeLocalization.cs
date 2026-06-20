@@ -50,6 +50,14 @@ namespace DontLetHerIn.GameLoop
         public static readonly LocalizedText ObservedClues =
             new LocalizedText("OBSERVED CLUES", "INDICES OBSERVÉS");
 
+        // ---- Observation pass (Phase 7H) ----
+        public static readonly LocalizedText ObserveTitle =
+            new LocalizedText("OBSERVE THE CORRIDOR", "OBSERVE LE COULOIR");
+
+        public static readonly LocalizedText ObserveSubtitle =
+            new LocalizedText("Look carefully. The answers are already here.",
+                              "Regarde bien. Les réponses sont déjà là.");
+
         // ---- Result ----
         public static readonly LocalizedText YouEscaped =
             new LocalizedText("YOU ESCAPED", "TU ES SORTI");

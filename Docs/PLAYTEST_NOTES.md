@@ -185,6 +185,37 @@ contradicts its floor's questions.
 
 ---
 
+## 3E. Phase 7H Checklist — Observation Camera Pass
+
+Phase 7H adds a short observation pass once per floor, before its trials (prototype pacing, not
+final cinematic polish). Items unchecked; run in Game view portrait (e.g. 1080x1920).
+
+```txt
+[ ] Game.unity opens; Play Mode starts with no red Console errors.
+[ ] Intro appears; BEGIN DESCENT starts the run.
+[ ] On Floor 5, the "OBSERVED CLUES" board appears AND an OBSERVE THE CORRIDOR overlay shows
+    before the first question.
+[ ] During observation: the question/answers are hidden and not clickable.
+[ ] During observation: the timer does NOT count down and the threat (DIST/STRESS) does NOT move.
+[ ] The camera subtly eases toward the corridor and settles back (or, with no Main Camera, the
+    overlay-only fallback shows for the same duration).
+[ ] After ~2-3s the overlay disappears and the first question appears; answers become tappable.
+[ ] Wrong answer still advances the threat; timeout advances it more strongly.
+[ ] Surviving Floor 5 triggers FLOOR CLEARED / DOORS CLOSING / DESCENDING.
+[ ] Floor 4 starts with a NEW observation pass and the clue board updates to Floor 4.
+[ ] No observation pass appears between trials of the same floor, after answers, or on win/loss.
+[ ] Restart after win/loss starts an observation pass again on the top floor.
+[ ] English default shows OBSERVE THE CORRIDOR / "Look carefully. The answers are already here."
+[ ] PrototypeLocalization.Language = GameLanguage.French shows OBSERVE LE COULOIR /
+    "Regarde bien. Les réponses sont déjà là." and the rest of the FR UI stays correct.
+```
+
+Note: the camera move is intentionally subtle. Report if it makes the corridor unreadable, if the
+overlay covers the clue board, or if any observation appears where it should not (between trials,
+after an answer, on win/loss).
+
+---
+
 ## 4. Manual Playtest Checklist
 
 For every playable build, test:

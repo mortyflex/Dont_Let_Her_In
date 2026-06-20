@@ -54,6 +54,10 @@ GameLoop/DescentFloorProfile.cs        - Pure descent tuning: displayed floor nu
 GameLoop/AnswerOutcome.cs +            - Classify an AnswerResult into
   AnswerOutcomeResolver.cs               CorrectFast/Normal/Slow / Wrong / Timeout.
 GameLoop/InterQuestionPacing.cs        - Pure pacing helper (hold seconds per outcome).
+GameLoop/ObservationPassTiming.cs      - Pure Phase 7H timing (observe hold / camera move /
+                                         camera return seconds; clamps, total, all-positive).
+GameLoop/ObservationPassState.cs       - Pure Phase 7H state guard: gates answers/timer while
+                                         observing, blocks duplicate Begin, re-arms on restart.
 GameLoop/PrototypeLocalization.cs      - Central EN/FR string registry + current language.
 GameLoop/LocalizedText.cs              - Small (english, french) pair with Get(language).
 GameLoop/GameLanguage.cs               - enum { English, French }.
@@ -155,8 +159,18 @@ PlayableRunFlowController.BeginFloor  - calls ui.UpdateClues(displayFloor) on ru
 ```
 
 The clue board reads the evidence model for content while the playable questions stay on
-`PrototypeFloorSet`; the two are theme-aligned per displayed floor. The observation camera
-pass and per-anchor in-world clues remain future phases.
+`PrototypeFloorSet`; the two are theme-aligned per displayed floor. Per-anchor in-world clues
+remain a future phase.
+
+Observation pass (Phase 7H — DONE, first version): `PlayableRunFlowController` now runs a short
+observation pass once per floor (run start, after each descent, after restart), AFTER
+`ui.UpdateClues(displayFloor)` and BEFORE the first trial. It shows a localized
+`OBSERVE THE CORRIDOR` overlay (`PrototypeLocalization.ObserveTitle` / `ObserveSubtitle`) and
+subtly eases the existing Main Camera toward the corridor and back (HYBRID; overlay-only fallback
+if no camera). During the pass no question is active, so the timer, threat and trial count cannot
+advance, and answers/question are hidden; the clue board stays visible. Pure timing/state live in
+`ObservationPassTiming` / `ObservationPassState`. This is in the orchestrator coroutine, not yet
+the dedicated scene MonoBehaviours below. No Cinemachine, no new package, no `Game.unity` edit.
 
 Proposed MonoBehaviours (still planned — own NO trial/threat rules):
 

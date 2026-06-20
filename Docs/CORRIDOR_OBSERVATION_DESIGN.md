@@ -314,6 +314,29 @@ observation pass (via `ObservationPhaseController`) when a floor begins, and sta
 sequence only after the "observation complete" handoff. The current trial flow, threat
 rules and descent transitions stay unchanged.
 
+### Phase 7H implementation status (first observation pass prototype)
+
+```txt
+Phase 7H adds the FIRST observation camera pass, but inside PlayableRunFlowController itself
+(a coroutine), not yet as the separate ObservationPhaseController/CorridorObservationController
+MonoBehaviours above (those remain the future, scene-driven target).
+
+What is implemented:
+- a short OBSERVE THE CORRIDOR overlay (localized EN/FR via PrototypeLocalization.ObserveTitle /
+  ObserveSubtitle) shown once per floor, BEFORE the first trial.
+- a subtle ease of the existing Main Camera toward the corridor and back (HYBRID), with an
+  overlay-only fallback if no camera is found. No Cinemachine, no new package, no Game.unity edit.
+- runs at run start, after each descent (Floor 4/3/2/1), and after restart; never between trials,
+  after answers, on wrong/timeout, or on win/loss.
+- during the pass: question/answers hidden, timer/threat/trial count frozen, clue board visible.
+- testable timing/state isolated in pure classes ObservationPassTiming / ObservationPassState.
+
+Still future (unchanged from the plan above):
+- per-anchor in-world clue visuals revealed by the pass (still the static HUD clue board for now).
+- the dedicated ObservationPhaseController / CorridorObservationController scene MonoBehaviours.
+- a real forward/back camera travel along corridor rails; Phase 7H is intentionally subtle.
+```
+
 ## Localization Considerations
 
 ```txt

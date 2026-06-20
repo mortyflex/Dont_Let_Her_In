@@ -41,12 +41,39 @@ namespace DontLetHerIn.GameLoop
         [Tooltip("Seconds the ASCENDING message holds before the next floor starts.")]
         [SerializeField] private float ascendingHoldSeconds = 0.8f;
 
+        [Header("Observation pass (Phase 7H)")]
+        [Tooltip("Optional. Falls back to Camera.main, then the first Camera found in the scene.")]
+        [SerializeField] private Camera observationCamera;
+
+        [Tooltip("Seconds the OBSERVE THE CORRIDOR overlay holds before the first trial of a floor.")]
+        [SerializeField] private float observationHoldSeconds = 2.0f;
+
+        [Tooltip("Seconds the camera eases toward the corridor at the start of the observation pass.")]
+        [SerializeField] private float cameraMoveSeconds = 0.6f;
+
+        [Tooltip("Seconds the camera takes to settle back to the gameplay pose before the trial.")]
+        [SerializeField] private float cameraReturnSeconds = 0.4f;
+
+        [Tooltip("How far the camera eases toward the corridor during observation (metres). Keep subtle.")]
+        [SerializeField] private float observationForwardOffset = 0.2f;
+
+        [Tooltip("How much the camera rises during observation (metres). Keep subtle.")]
+        [SerializeField] private float observationHeightOffset = 0.05f;
+
         private RunController _run;
         private QuestionManager _questions;
         private IReadOnlyList<FloorDefinition> _floors;
         private RunTrialProgress _progress;
         private Coroutine _advanceRoutine;
         private bool _eventsBound;
+
+        // Phase 7H observation pass state.
+        private ObservationPassTiming _observationTiming;
+        private readonly ObservationPassState _observation = new ObservationPassState();
+        private Coroutine _observationRoutine;
+        private bool _cameraPoseCaptured;
+        private Vector3 _cameraHomePosition;
+        private Quaternion _cameraHomeRotation;
 
         private void Awake()
         {
@@ -69,6 +96,9 @@ namespace DontLetHerIn.GameLoop
             _run = new RunController(_floors.Count);
             _questions = new QuestionManager();
             _questions.AnswerResolved += HandleAnswerResolved;
+
+            _observationTiming = new ObservationPassTiming(
+                observationHoldSeconds, cameraMoveSeconds, cameraReturnSeconds);
         }
 
         private void Start()
@@ -80,8 +110,38 @@ namespace DontLetHerIn.GameLoop
                 ui.ShowStartPanel();
             }
 
+            CaptureCameraHomePose();
             UpdateCreature();
             RefreshThreatHud();
+        }
+
+        /// <summary>
+        /// Resolve the camera and store its gameplay pose once, so the observation pass can ease
+        /// toward the corridor and reliably settle back. If no camera is available the pass runs
+        /// as an overlay-only fallback (no physical movement).
+        /// </summary>
+        private void CaptureCameraHomePose()
+        {
+            if (observationCamera == null)
+            {
+                observationCamera = Camera.main;
+            }
+            if (observationCamera == null)
+            {
+#if UNITY_2023_1_OR_NEWER
+                observationCamera = Object.FindFirstObjectByType<Camera>();
+#else
+                observationCamera = Object.FindObjectOfType<Camera>();
+#endif
+            }
+
+            if (observationCamera != null)
+            {
+                Transform t = observationCamera.transform;
+                _cameraHomePosition = t.localPosition;
+                _cameraHomeRotation = t.localRotation;
+                _cameraPoseCaptured = true;
+            }
         }
 
         private void OnDestroy()
@@ -90,6 +150,7 @@ namespace DontLetHerIn.GameLoop
             {
                 _questions.AnswerResolved -= HandleAnswerResolved;
             }
+            StopObservationRoutine();
             UnbindUiEvents();
         }
 
@@ -132,6 +193,7 @@ namespace DontLetHerIn.GameLoop
         private void HandleRestartClicked()
         {
             StopAdvanceRoutine();
+            StopObservationRoutine();
             _questions.Reset();
             BeginRun();
         }
@@ -148,11 +210,12 @@ namespace DontLetHerIn.GameLoop
         private void BeginRun()
         {
             StopAdvanceRoutine();
+            StopObservationRoutine();
             _run.StartRun();
             _progress.Reset();
             if (ui != null) ui.ShowGameplay();
             BeginFloor(); // top floor threat reset, creature + HUD refresh
-            StartCurrentTrial();
+            BeginObservationThenTrial(); // Phase 7H: observe before the first trial
         }
 
         /// <summary>
@@ -327,7 +390,7 @@ namespace DontLetHerIn.GameLoop
             _advanceRoutine = null;
             if (_run.IsRunning)
             {
-                StartCurrentTrial();
+                BeginObservationThenTrial(); // Phase 7H: observe before the new floor's first trial
             }
         }
 
@@ -337,6 +400,111 @@ namespace DontLetHerIn.GameLoop
             {
                 StopCoroutine(_advanceRoutine);
                 _advanceRoutine = null;
+            }
+        }
+
+        // ---- Observation pass (Phase 7H) -----------------------------------
+
+        /// <summary>
+        /// Run the observation pass for the current floor, then start its first trial. Called
+        /// once per floor (run start and after each descent), after the clue board is updated.
+        /// During the pass no question is active, so the timer, threat and trial count cannot
+        /// advance and answers stay hidden. A duplicate pass cannot start while one is running.
+        /// </summary>
+        private void BeginObservationThenTrial()
+        {
+            StopObservationRoutine();
+            _observationRoutine = StartCoroutine(ObserveThenStartTrial());
+        }
+
+        private IEnumerator ObserveThenStartTrial()
+        {
+            _observation.Begin();
+            if (ui != null)
+            {
+                ui.PrepareObservation();   // hide question/answers/cue/status, keep clue board
+                ui.ShowObservationHint();  // localized OBSERVE THE CORRIDOR overlay
+            }
+
+            Vector3 home = _cameraHomePosition;
+            Vector3 observe = ObservePosition();
+
+            // Subtle camera ease toward the corridor, hold, then settle back. With no camera
+            // the moves still wait so the overlay-only fallback keeps the same pacing.
+            yield return MoveCameraTo(home, observe, _observationTiming.CameraMoveSeconds);
+            yield return new WaitForSeconds(_observationTiming.ObservationHoldSeconds);
+            yield return MoveCameraTo(observe, home, _observationTiming.CameraReturnSeconds);
+
+            if (ui != null) ui.HideObservationHint();
+            _observation.Complete();
+            _observationRoutine = null;
+
+            if (_run.IsRunning)
+            {
+                StartCurrentTrial(); // resumes normal trial flow (question/answers/timer)
+            }
+        }
+
+        /// <summary>The subtle "look into the corridor" pose: slightly forward and higher.</summary>
+        private Vector3 ObservePosition()
+        {
+            if (!_cameraPoseCaptured) return _cameraHomePosition;
+            Vector3 forward = _cameraHomeRotation * Vector3.forward;
+            return _cameraHomePosition
+                   + forward * observationForwardOffset
+                   + Vector3.up * observationHeightOffset;
+        }
+
+        private IEnumerator MoveCameraTo(Vector3 from, Vector3 to, float seconds)
+        {
+            // No camera (overlay-only fallback): just consume the time so pacing is unchanged.
+            if (observationCamera == null || !_cameraPoseCaptured)
+            {
+                if (seconds > 0f) yield return new WaitForSeconds(seconds);
+                yield break;
+            }
+
+            Transform t = observationCamera.transform;
+            if (seconds <= 0f)
+            {
+                t.localPosition = to;
+                yield break;
+            }
+
+            float elapsed = 0f;
+            while (elapsed < seconds)
+            {
+                elapsed += Time.deltaTime;
+                float k = Mathf.Clamp01(elapsed / seconds);
+                k = k * k * (3f - 2f * k); // smoothstep ease
+                t.localPosition = Vector3.Lerp(from, to, k);
+                yield return null;
+            }
+            t.localPosition = to;
+        }
+
+        /// <summary>
+        /// Stop any running observation pass and restore the camera/overlay if it was
+        /// interrupted mid-pass (e.g. restart). Safe to call when no pass is running.
+        /// </summary>
+        private void StopObservationRoutine()
+        {
+            if (_observationRoutine != null)
+            {
+                StopCoroutine(_observationRoutine);
+                _observationRoutine = null;
+            }
+
+            if (_observation.IsObserving)
+            {
+                if (_cameraPoseCaptured && observationCamera != null)
+                {
+                    Transform t = observationCamera.transform;
+                    t.localPosition = _cameraHomePosition;
+                    t.localRotation = _cameraHomeRotation;
+                }
+                if (ui != null) ui.HideObservationHint();
+                _observation.Reset();
             }
         }
 
@@ -377,6 +545,7 @@ namespace DontLetHerIn.GameLoop
         private void ShowResult(bool won)
         {
             StopAdvanceRoutine();
+            StopObservationRoutine();
             if (ui == null) return;
 
             var result = _run.BuildResult();

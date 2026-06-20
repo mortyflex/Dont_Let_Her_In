@@ -1020,11 +1020,17 @@ Live playable trial content localized EN/FR in Phase 7F (prompts/answers/cues), 
 Static corridor clue board added in Phase 7G (OBSERVED CLUES, per-floor, EN/FR; evidence bridge,
   reads PrototypeEvidenceFloorSet; runtime trials still from PrototypeFloorSet; no scene edit).
   EditMode tests: 204/204 passing.
+Observation camera pass added in Phase 7H: a short OBSERVE THE CORRIDOR moment plays once at the
+  start of each floor (run start + after each descent + after restart), before the first trial.
+  During observation answers/question are hidden, timer/threat/trial count do not advance, and the
+  clue board stays visible. HYBRID: subtle Main Camera ease toward the corridor + timed overlay,
+  with an overlay-only fallback if no camera is found. No Cinemachine, no new package, no scene edit.
+  EditMode tests: 219/219 passing.
 No iOS build yet.
 ```
 
 Next planned step:
 
 ```txt
-Phase 7H — Observation Camera Pass Prototype (recommended)
+Phase 7I — Observation/evidence handoff and PlayMode coverage (recommended)
 ```

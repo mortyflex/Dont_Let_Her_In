@@ -82,6 +82,10 @@ namespace DontLetHerIn.UI
         private Text _floorTransitionTitle;
         private Text _floorTransitionSubtitle;
 
+        private GameObject _observationPanel;
+        private Text _observationTitle;
+        private Text _observationSubtitle;
+
         private Text _startTitleText;
         private Text _introBodyText;
         private Text _startButtonLabel;
@@ -266,6 +270,42 @@ namespace DontLetHerIn.UI
         public void HideFloorTransition()
         {
             if (_floorTransitionPanel != null) _floorTransitionPanel.SetActive(false);
+            if (_questionPanel != null) _questionPanel.SetActive(true);
+        }
+
+        /// <summary>
+        /// Enter the Phase 7H observation pass: hide the question, cue, answers and status so
+        /// the player cannot answer while observing, but keep the corridor, top HUD and the
+        /// static clue board visible. Use <see cref="ShowObservationHint"/> for the overlay text
+        /// and <see cref="HideObservationHint"/> to leave it. The clue board is updated/shown by
+        /// <see cref="UpdateClues"/> before the pass, so it stays visible underneath.
+        /// </summary>
+        public void PrepareObservation()
+        {
+            if (_questionPanel != null) _questionPanel.SetActive(false);
+            HideCue();
+            for (int i = 0; i < AnswerButtonCount; i++)
+            {
+                if (_answerButtons[i] != null) _answerButtons[i].gameObject.SetActive(false);
+            }
+            SetStatus(string.Empty, TextColor);
+            if (_proximityText != null) _proximityText.text = string.Empty;
+        }
+
+        /// <summary>Show the localized OBSERVE THE CORRIDOR overlay (text pulled at show-time).</summary>
+        public void ShowObservationHint()
+        {
+            if (_observationTitle != null)
+                _observationTitle.text = PrototypeLocalization.Current(PrototypeLocalization.ObserveTitle);
+            if (_observationSubtitle != null)
+                _observationSubtitle.text = PrototypeLocalization.Current(PrototypeLocalization.ObserveSubtitle);
+            if (_observationPanel != null) _observationPanel.SetActive(true);
+        }
+
+        /// <summary>Hide the observation overlay and restore the question panel for the first trial.</summary>
+        public void HideObservationHint()
+        {
+            if (_observationPanel != null) _observationPanel.SetActive(false);
             if (_questionPanel != null) _questionPanel.SetActive(true);
         }
 
@@ -636,6 +676,22 @@ namespace DontLetHerIn.UI
                 TextAnchor.MiddleCenter, new Vector2(0.06f, 0.10f), new Vector2(0.94f, 0.48f));
             _floorTransitionSubtitle.color = TextColor;
             _floorTransitionPanel.SetActive(false);
+
+            // ---- OBSERVATION OVERLAY (Phase 7H) ----
+            // Translucent band over the lower question/answer area only (same footprint as the
+            // floor transition), so the corridor, creature and the clue board above stay visible
+            // while the player observes. Shown once per floor before the first trial; starts hidden.
+            RectTransform observationPanel = CreatePanel("ObservationPanel", root, DimColor,
+                new Vector2(0.04f, 0.02f), new Vector2(0.96f, 0.46f));
+            _observationPanel = observationPanel.gameObject;
+            _observationTitle = CreateText("ObservationTitle", observationPanel, string.Empty, 50,
+                TextAnchor.MiddleCenter, new Vector2(0.05f, 0.52f), new Vector2(0.95f, 0.92f));
+            _observationTitle.fontStyle = FontStyle.Bold;
+            _observationTitle.color = WarnColor;
+            _observationSubtitle = CreateText("ObservationSubtitle", observationPanel, string.Empty, 32,
+                TextAnchor.MiddleCenter, new Vector2(0.06f, 0.10f), new Vector2(0.94f, 0.50f));
+            _observationSubtitle.color = TextColor;
+            _observationPanel.SetActive(false);
         }
 
         private void BuildStartPanel(RectTransform parent)
